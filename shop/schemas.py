@@ -57,6 +57,7 @@ class UserCreate(UserBase):
     username: str
     email: EmailStr
     role: UserRoleEnum
+    shop_name: Optional[str]
     is_staff: bool
     is_active: bool
     is_superuser: bool
@@ -160,3 +161,28 @@ class UserProfileOut(UserOut, UserProfileBase):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+class ShopPatch(BaseModel):
+    shop_name: Optional[str] = None
+    docs: Optional[str] = None
+    avatar: Optional[UploadFile] = None
+    cover_photo: Optional[UploadFile] = None
+
+    class Config:
+        from_attributes = True
+
+
+# TODO add all shop's categories field
+class ShopOut(BaseModel):
+    id: int
+    shop_name: str
+    docs: Optional[str] = None
+    avatar: Optional[str] = None
+    cover_photo: Optional[str] = None
+    is_approved: bool
+    created_at: datetime
+    modified_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

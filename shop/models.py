@@ -1,9 +1,10 @@
-from .database import Base
 from passlib.context import CryptContext
-from .schemas import UserRoleEnum
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
+from .database import Base
+from .schemas import UserRoleEnum
 
 
 class User(Base):
@@ -31,6 +32,7 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
 
     profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    shop = relationship("Shop", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     # Property to access the hashed password
     @property
@@ -71,3 +73,83 @@ class UserProfile(Base):
 
     # Relationship with User model (One-to-One)
     user = relationship("User", back_populates="profile", uselist=False)
+
+
+class Shop(Base):
+    """
+    SQLAlchemy model for Shop.
+    Represents the 'shop' table in the database.
+    Shop is created if user choose role shop only.
+    """
+
+    __tablename__ = "shop"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+
+    shop_name = Column(String(50), unique=True, index=True)
+    docs = Column(String)
+    avatar = Column(String(255), nullable=True)
+    cover_photo = Column(String(255), nullable=True)
+    # TODO change is_approved/is_available for category/shop/item to False by default
+    is_approved = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    modified_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    categories = relationship("Category", back_populates="shop")
+    items = relationship("Item", back_populates="shop")
+    user = relationship("User", back_populates="shop", uselist=False)
+
+
+class Category(Base):
+    __tablename__ = "category"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shop_id = Column(Integer, ForeignKey("shop.id"))
+
+    name = Column(String(100))
+    slug = Column(String, unique=True)
+    is_available = Column(Boolean, default=True)
+
+    # Relationships
+    shop = relationship("Shop", back_populates="categories")
+    items = relationship("Item", back_populates="category")
+
+
+class Item(Base):
+    __tablename__ = "item"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shop_id = Column(Integer, ForeignKey("shop.id"))
+    category_id = Column(Integer, ForeignKey("category.id"))
+
+    name = Column(String(55))
+    title = Column(String(200))
+    description = Column(Text)
+    price = Column(Float(precision=2))
+
+    slug = Column(String, unique=True)
+    is_approved = Column(Boolean, default=True)
+    is_available = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    category = relationship("Category", back_populates="items")
+    shop = relationship("Shop", back_populates="items")
+    item_images = relationship("ItemImage", back_populates="item")
+
+
+class ItemImage(Base):
+    __tablename__ = "item_image"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("item.id"))
+
+    image = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    item = relationship("Item", back_populates="item_images")

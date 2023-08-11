@@ -1,13 +1,8 @@
-import os
-
-from fastapi import Depends, HTTPException, status
-from jose import JWTError, jwt
-from sqlalchemy import create_engine
-from sqlalchemy.orm.session import Session, sessionmaker
-
 from . import settings
 from .auth import oauth2_scheme
-from .database import Base, SessionLocal
+from .database import SessionLocal
+from fastapi import Depends, HTTPException, status
+from jose import JWTError, jwt
 from .models import User
 from .schemas import TokenData
 from .test_config import SQLALCHEMY_DATABASE_URL
@@ -57,3 +52,13 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     if user is None:
         raise credentials_exception
     return user
+
+
+# function which will get the current user and check if this user has shop,
+# if user has shop we need to return a shop object
+def get_current_shop(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> Shop:
+    if current_user.role == "SHOP":
+        shop = db.query(Shop).filter(Shop.user_id == current_user.id).first()
+        return shop
+    else:
+        raise HTTPException(status_code=404, detail="User is not a shop.")

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from . import crud, models, schemas
 from .auth import authenticate, create_access_token
 from .database import SessionLocal, engine
-from .utils import get_current_user, get_db
+from .utils import get_current_shop, get_current_user, get_db
 
 app = FastAPI()
 
@@ -49,7 +49,11 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     crud.check_model_fields(user_data_dict, allowed_fields)
 
     # tests if user exists and handle unique constraints error
-    crud.get_user_by_email_or_username(db, email=user_data.email, username=user_data.username, user_data=user_data)
+    crud.get_user_by_email_or_username(db, email=user_data.email, username=user_data.username)
+    if user_data.role == schemas.UserRoleEnum.SHOP:
+        if not user_data.shop_name:
+            raise HTTPException(status_code=400, detail="Shop name is required.")
+        crud.get_shop_by_name(db, shop_name=user_data.shop_name)
 
     # Create a new User object using UserCreate schema
     new_user = models.User(
@@ -62,6 +66,8 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     # Hash the password before saving to the database
     new_user.set_password(user_data.password)
     new_user.profile = models.UserProfile()
+    if new_user.role == schemas.UserRoleEnum.SHOP:
+        new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name)
 
     # Add the new user to the database
     db.add(new_user)
@@ -163,3 +169,46 @@ def update_user_details(
     db.refresh(current_user)
 
     return current_user
+
+
+#
+# @app.patch("/shop/", response_model=schemas.ShopOut)
+# def update_shop_details(shop_data: schemas.ShopPatch, current_user: models.User = Depends(get_current_user)):
+#     """
+#     Updates the details of a shop by logged user shop.
+#     Allows partial updates by providing only the fields that need to be changed in the request payload.
+#     """
+#     # tests fields provided
+#     allowed_fields = set(schemas.ShopPatch.model_fields.keys())
+#     shop_data_dict = shop_data.model_dump()
+#     crud.check_model_fields(shop_data_dict, allowed_fields)
+#
+#     # get shop
+#     # shop = crud.get_shop_by_name(db, shop_name=shop_data.shop_name)
+#     user = current_user
+#     # variable to tests if model has been changed
+#     changed = 0
+#
+#     # assign new values if changed
+#     for key, value in shop_data_dict.items():
+#         current_value = getattr(shop, key)
+#         if value is not None:
+#             if value != current_value:
+#                 setattr(shop, key, value)
+#                 changed += 1
+#     if not changed:
+#         raise HTTPException(status_code=422, detail="Model was not changed.")
+#
+#     db.commit()
+#     db.refresh(shop)
+#
+#     return shop
+#
+
+
+@app.get("/shop/", response_model=schemas.ShopOut)
+def get_shop_details(current_shop: models.Shop = Depends(get_current_shop)):
+    """
+    Get the shop details of the current logged-in user.
+    """
+    return current_shop
