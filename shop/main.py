@@ -1,11 +1,10 @@
-from . import crud
-from .import models
-from . import schemas
-from .auth import authenticate, create_access_token
-from .database import SessionLocal, engine
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
+from . import crud, models, schemas
+from .auth import authenticate, create_access_token
+from .database import SessionLocal, engine
 from .utils import get_current_user, get_db
 
 app = FastAPI()
@@ -96,7 +95,7 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
 
 
 # TODO consider make it with a userprofile fields
-@app.get("/users/{user_id}", response_model=schemas.UserOut)
+@app.get("/user/{user_id}", response_model=schemas.UserOut)
 def read_user(user_id: int, db: SessionLocal = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if user is None:
@@ -104,16 +103,20 @@ def read_user(user_id: int, db: SessionLocal = Depends(get_db)):
     return user
 
 
-@app.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    crud.delete_user_by_id(db, user_id)
+@app.delete("/user/")
+def delete_user(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    crud.delete_user_by_id(db, current_user.id)
     return {"message": "User deleted successfully."}
 
 
 # TODO returns profile fields as a null in UserProfileOut response model
 # TODO add notification that not possible to patch email
-@app.patch("/users/{user_id}", response_model=schemas.UserProfileOut)
-def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: Session = Depends(get_db)):
+@app.patch("/user/", response_model=schemas.UserProfileOut)
+def update_user_details(
+    user_data: schemas.UserCompletePatch,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Updates the details of a user by their unique 'user_id'.
     Allows partial updates by providing only the fields that need to be changed in the request payload.
@@ -128,8 +131,8 @@ def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: 
     allowed_fields_profile = set(schemas.UserProfilePatch.model_fields.keys())
 
     # get user and profile
-    user = crud.get_user_by_id(db, user_id)
-    profile = user.profile
+
+    profile = current_user.profile
 
     # variable to tests if model has been changed
     changed = 0
@@ -137,15 +140,15 @@ def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: 
     # assign new values if changed
     for key, value in user_data_dict.items():
         if key in allowed_fields_user:
-            current_value = getattr(user, key)
+            current_value = getattr(current_user, key)
             if value is not None:
                 if key == "password":
-                    user.set_password(value)
+                    current_user.set_password(value)
                     continue
                 if value != current_value:
                     if key == "username":
                         crud.check_free_username(db, value)
-                    setattr(user, key, value)
+                    setattr(current_user, key, value)
                     changed += 1
         elif key in allowed_fields_profile:
             current_value = getattr(profile, key)
@@ -157,6 +160,6 @@ def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: 
         raise HTTPException(status_code=422, detail="Model was not changed.")
 
     db.commit()
-    db.refresh(user)
+    db.refresh(current_user)
 
-    return user
+    return current_user
