@@ -74,6 +74,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     db.close()
+
     # Return the newly created user as a Pydantic model
     return new_user
 
@@ -171,44 +172,35 @@ def update_user_details(
     return current_user
 
 
-#
-# @app.patch("/shop/", response_model=schemas.ShopOut)
-# def update_shop_details(shop_data: schemas.ShopPatch, current_user: models.User = Depends(get_current_user)):
-#     """
-#     Updates the details of a shop by logged user shop.
-#     Allows partial updates by providing only the fields that need to be changed in the request payload.
-#     """
-#     # tests fields provided
-#     allowed_fields = set(schemas.ShopPatch.model_fields.keys())
-#     shop_data_dict = shop_data.model_dump()
-#     crud.check_model_fields(shop_data_dict, allowed_fields)
-#
-#     # get shop
-#     # shop = crud.get_shop_by_name(db, shop_name=shop_data.shop_name)
-#     user = current_user
-#     # variable to tests if model has been changed
-#     changed = 0
-#
-#     # assign new values if changed
-#     for key, value in shop_data_dict.items():
-#         current_value = getattr(shop, key)
-#         if value is not None:
-#             if value != current_value:
-#                 setattr(shop, key, value)
-#                 changed += 1
-#     if not changed:
-#         raise HTTPException(status_code=422, detail="Model was not changed.")
-#
-#     db.commit()
-#     db.refresh(shop)
-#
-#     return shop
-#
-
-
 @app.get("/shop/", response_model=schemas.ShopOut)
 def get_shop_details(current_shop: models.Shop = Depends(get_current_shop)):
     """
     Get the shop details of the current logged-in user.
     """
+    return current_shop
+
+
+@app.patch("/shop/", response_model=schemas.ShopOut)
+def update_shop_details(
+    shop_data: schemas.ShopPatch, current_shop: models.Shop = Depends(get_current_shop), db: Session = Depends(get_db)
+):
+    allowed_fields = set(schemas.ShopPatch.model_fields.keys())
+    shop_data_dict = shop_data.model_dump()
+    crud.check_model_fields(shop_data_dict, allowed_fields)
+
+    changed = 0
+    for key, value in shop_data_dict.items():
+        current_value = getattr(current_shop, key)
+        if value is not None:
+            if value != current_value:
+                if key == "shop_name":
+                    crud.check_free_shop_name(db, value)
+                setattr(current_shop, key, value)
+                changed += 1
+    if not changed:
+        raise HTTPException(status_code=422, detail="Model was not changed.")
+
+    db.commit()
+    db.refresh(current_shop)
+
     return current_shop

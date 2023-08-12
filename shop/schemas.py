@@ -164,25 +164,32 @@ class TokenData(BaseModel):
 
 
 class ShopPatch(BaseModel):
+    """
+    Pydantic model for partially updating shop data.
+    Represents the fields that can be updated in a shop.
+    """
+
     shop_name: Optional[str] = None
+    description: Optional[str] = None
     docs: Optional[str] = None
     avatar: Optional[UploadFile] = None
     cover_photo: Optional[UploadFile] = None
 
     class Config:
         from_attributes = True
+        validate_assignment = True
+        extra = "allow"
 
 
 # TODO add all shop's categories field
-class ShopOut(BaseModel):
+class ShopOut(ShopPatch):
+    """
+    Pydantic model for sending shop data in API responses.
+    Inherits from ShopPatch and includes additional fields for reading shop data from the API.
+    """
+
     id: int
     shop_name: str
-    docs: Optional[str] = None
-    avatar: Optional[str] = None
-    cover_photo: Optional[str] = None
     is_approved: bool
     created_at: datetime
     modified_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True

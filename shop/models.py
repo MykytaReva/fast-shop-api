@@ -75,6 +75,7 @@ class UserProfile(Base):
     user = relationship("User", back_populates="profile", uselist=False)
 
 
+# TODO add unique slug with checks.
 class Shop(Base):
     """
     SQLAlchemy model for Shop.
@@ -91,6 +92,7 @@ class Shop(Base):
     docs = Column(String)
     avatar = Column(String(255), nullable=True)
     cover_photo = Column(String(255), nullable=True)
+    description = Column(Text)
     # TODO change is_approved/is_available for category/shop/item to False by default
     is_approved = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

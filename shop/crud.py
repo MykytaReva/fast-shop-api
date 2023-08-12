@@ -59,6 +59,3 @@ def check_model_fields(user_data_dict, allowed_fields):
     for key, value in user_data_dict.items():
         if key not in allowed_fields:
             raise HTTPException(status_code=422, detail=f"Unrecognized field: {key}")
-
-
-# function to get the current logged in user, if user have role shop - return shop, else - return not allowed

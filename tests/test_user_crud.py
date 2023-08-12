@@ -1,13 +1,15 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from shop import schemas, settings
+from shop import models, schemas
 from shop.auth import create_access_token
-from shop.database import TestingSessionLocal
+from shop.database import TestingSessionLocal, test_engine
 from shop.main import app
 from shop.models import User
 
 client = TestClient(app)
+# Create all tables in the database (if they don't exist)
+models.Base.metadata.create_all(bind=test_engine)
 
 
 def create_user(data):
