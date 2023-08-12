@@ -15,7 +15,7 @@ def delete_user(response_json):
     return client.delete(f"/user/")
 
 
-def test_read_users_me_authenticated_user_success(db, random_user_data):
+def test_read_users_me_authenticated_user_success(random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
@@ -33,7 +33,7 @@ def test_read_users_me_authenticated_user_success(db, random_user_data):
     delete_user(new_user)
 
 
-def test_read_users_me_authenticated_user_fail(db, random_user_data):
+def test_read_users_me_authenticated_user_fail(random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
@@ -56,12 +56,12 @@ def test_get_index_page():
     assert response.status_code == 200
 
 
-def test_get_all_users(db):
+def test_get_all_users():
     response = client.get("/users/")
     assert response.status_code == 200
 
 
-def test_get_user_by_id_success(db, random_user_data):
+def test_get_user_by_id_success(random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json().get("id")
@@ -70,14 +70,14 @@ def test_get_user_by_id_success(db, random_user_data):
     delete_user(response)
 
 
-def test_get_user_by_id_404(db):
+def test_get_user_by_id_404():
     user_id = 999999
     response = client.get(f"/user/{user_id}/")
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
 
 
-def test_delete_user_success(db, random_user_data):
+def test_delete_user_success(random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
@@ -85,14 +85,14 @@ def test_delete_user_success(db, random_user_data):
     assert response.status_code == 200
 
 
-def test_delete_user_not_found(db):
+def test_delete_user_not_found():
     user_id = 999999
     response = client.delete(f"user/")
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
 
 
-def test_patch_user_success(db, random_user_data, fake):
+def test_patch_user_success(random_user_data, fake):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
@@ -108,7 +108,7 @@ def test_patch_user_success(db, random_user_data, fake):
     delete_user(new_user)
 
 
-def test_patch_user_no_changes_detected(db, random_user_data):
+def test_patch_user_no_changes_detected(random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     allowed_fields = set(schemas.UserCompletePatch.model_fields.keys())
@@ -123,7 +123,7 @@ def test_patch_user_no_changes_detected(db, random_user_data):
     delete_user(new_user)
 
 
-def test_patch_user_username_taken(db, random_user_data, fake):
+def test_patch_user_username_taken(random_user_data, fake):
     new_user_1 = create_user(random_user_data)
     random_user_data["email"] = fake.email()
     random_user_data["username"] = fake.user_name()
@@ -140,7 +140,7 @@ def test_patch_user_username_taken(db, random_user_data, fake):
     delete_user(new_user_2)
 
 
-def test_patch_user_not_found(db, random_user_data):
+def test_patch_user_not_found(random_user_data):
     data = {"username": "TEST_USERNAME"}
     user_id = 9999999
     response = client.patch(f"user/", json=data)

@@ -1,20 +1,36 @@
-from . import settings
-from .auth import oauth2_scheme
-from .database import SessionLocal
+import os
+
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
+from sqlalchemy import create_engine
+from sqlalchemy.orm.session import Session, sessionmaker
+
+from . import settings
+from .auth import oauth2_scheme
+from .database import Base, SessionLocal
 from .models import User
 from .schemas import TokenData
-from sqlalchemy.orm.session import Session
+from .test_config import SQLALCHEMY_DATABASE_URL
 
 
 # Dependency to get the database session
 def get_db():
-    db = SessionLocal()
-    try:
+    if os.getenv("ENVIRONMENT") == "test":
+        engine = create_engine(SQLALCHEMY_DATABASE_URL)
+        TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+        # Create tables in the in-memory test database
+        Base.metadata.create_all(bind=engine)
+
+        db = TestingSessionLocal()
         yield db
-    finally:
         db.close()
+    else:
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
