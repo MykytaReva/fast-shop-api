@@ -1,5 +1,6 @@
-from shop import schemas
 from fastapi.testclient import TestClient
+
+from shop import schemas
 from shop.main import app
 
 client = TestClient(app)
@@ -11,10 +12,10 @@ def create_user(data):
 
 def delete_user(response_json):
     user_id = response_json.json().get("id")
-    return client.delete(f"/users/{user_id}")
+    return client.delete(f"/user/")
 
 
-def test_read_users_me_authenticated_user_success(random_user_data):
+def test_read_users_me_authenticated_user_success(db, random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
@@ -32,7 +33,7 @@ def test_read_users_me_authenticated_user_success(random_user_data):
     delete_user(new_user)
 
 
-def test_read_users_me_authenticated_user_fail(random_user_data):
+def test_read_users_me_authenticated_user_fail(db, random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
@@ -55,43 +56,43 @@ def test_get_index_page():
     assert response.status_code == 200
 
 
-def test_get_all_users():
+def test_get_all_users(db):
     response = client.get("/users/")
     assert response.status_code == 200
 
 
-def test_get_user_by_id_success(random_user_data):
+def test_get_user_by_id_success(db, random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json().get("id")
-    response = client.get(f"/users/{user_id}/")
+    response = client.get(f"/user/{user_id}/")
     assert response.status_code == 200
     delete_user(response)
 
 
-def test_get_user_by_id_404():
+def test_get_user_by_id_404(db):
     user_id = 999999
-    response = client.get(f"/users/{user_id}/")
+    response = client.get(f"/user/{user_id}/")
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
 
 
-def test_delete_user_success(random_user_data):
+def test_delete_user_success(db, random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
-    response = client.delete(f"users/{user_id}/")
+    response = client.delete(f"user/")
     assert response.status_code == 200
 
 
-def test_delete_user_not_found():
+def test_delete_user_not_found(db):
     user_id = 999999
-    response = client.delete(f"users/{user_id}/")
+    response = client.delete(f"user/")
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
 
 
-def test_patch_user_success(random_user_data, fake):
+def test_patch_user_success(db, random_user_data, fake):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
@@ -102,12 +103,12 @@ def test_patch_user_success(random_user_data, fake):
         "city": "PATCHED_CITY",
         "country": "PATCHED_DOB",
     }
-    response = client.patch(f"users/{user_id}/", json=data)
+    response = client.patch(f"user/", json=data)
     assert response.status_code == 200
     delete_user(new_user)
 
 
-def test_patch_user_no_changes_detected(random_user_data):
+def test_patch_user_no_changes_detected(db, random_user_data):
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
     allowed_fields = set(schemas.UserCompletePatch.model_fields.keys())
@@ -116,13 +117,13 @@ def test_patch_user_no_changes_detected(random_user_data):
         if field in random_user_data:
             data[field] = random_user_data[field]
     user_id = new_user.json()["id"]
-    response = client.patch(f"users/{user_id}/", json=data)
+    response = client.patch(f"user/", json=data)
     assert response.status_code == 422
     assert response.json() == {"detail": "Model was not changed."}
     delete_user(new_user)
 
 
-def test_patch_user_username_taken(random_user_data, fake):
+def test_patch_user_username_taken(db, random_user_data, fake):
     new_user_1 = create_user(random_user_data)
     random_user_data["email"] = fake.email()
     random_user_data["username"] = fake.user_name()
@@ -132,16 +133,16 @@ def test_patch_user_username_taken(random_user_data, fake):
 
     data = {"username": new_user_2.json().get("username")}
     user_id = new_user_1.json()["id"]
-    response = client.patch(f"users/{user_id}/", json=data)
+    response = client.patch(f"user/", json=data)
     assert response.status_code == 409
     assert response.json() == {"detail": "Username is already taken."}
     delete_user(new_user_1)
     delete_user(new_user_2)
 
 
-def test_patch_user_not_found(random_user_data):
+def test_patch_user_not_found(db, random_user_data):
     data = {"username": "TEST_USERNAME"}
     user_id = 9999999
-    response = client.patch(f"users/{user_id}/", json=data)
+    response = client.patch(f"user/", json=data)
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}

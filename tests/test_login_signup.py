@@ -1,7 +1,7 @@
 from test_user_crud import client, create_user, delete_user
 
 
-def test_login_success(random_user_data):
+def test_login_success(db, random_user_data):
     new_user = create_user(random_user_data)
     # data = {
     #     'username': new_user.json().get('username'),
@@ -15,7 +15,7 @@ def test_login_success(random_user_data):
     delete_user(new_user)
 
 
-def test_login_invalid_details(random_user_data):
+def test_login_invalid_details(db, random_user_data):
     new_user = create_user(random_user_data)
     # data = {
     #     'username': new_user.json().get('username'),
@@ -28,7 +28,7 @@ def test_login_invalid_details(random_user_data):
     delete_user(new_user)
 
 
-def test_login_user_not_found(random_user_data):
+def test_login_user_not_found(db, random_user_data):
     data = {"username": random_user_data["email"], "password": "WRONG_PASSWORD"}
     response = client.post("/login", data=data)
 
@@ -36,7 +36,7 @@ def test_login_user_not_found(random_user_data):
     assert response.json() == {"detail": "Incorrect credentials."}
 
 
-def test_create_user_success(random_user_data):
+def test_create_user_success(db, random_user_data):
     data = random_user_data
     response = create_user(data)
     assert response.status_code == 200
@@ -45,14 +45,14 @@ def test_create_user_success(random_user_data):
     delete_user(response)
 
 
-def test_create_user_not_all_fields_provided(random_user_data):
+def test_create_user_not_all_fields_provided(db, random_user_data):
     data = random_user_data.pop("username")
     response = create_user(data)
     assert response.status_code == 422
     delete_user(response)
 
 
-def test_create_user_non_existing_field(random_user_data):
+def test_create_user_non_existing_field(db, random_user_data):
     random_user_data["qwerty"] = "qwerty"
     data = random_user_data
     response = create_user(data)
@@ -61,14 +61,14 @@ def test_create_user_non_existing_field(random_user_data):
     delete_user(response)
 
 
-def test_create_user_incorrect_role(random_user_data):
+def test_create_user_incorrect_role(db, random_user_data):
     random_user_data["role"] = "INCORRECT_ROLE"
     response = create_user(random_user_data)
     assert response.status_code == 422
     delete_user(response)
 
 
-def test_create_user_email_taken(random_user_data):
+def test_create_user_email_taken(db, random_user_data):
     data1 = random_user_data
     user_1 = create_user(data1)  # Create the first user
     assert user_1.status_code == 200
@@ -83,7 +83,7 @@ def test_create_user_email_taken(random_user_data):
     delete_user(user_1)
 
 
-def test_create_user_username_taken(random_user_data, fake):
+def test_create_user_username_taken(db, random_user_data, fake):
     data1 = random_user_data
     user_1 = create_user(data1)  # Create the first user
     assert user_1.status_code == 200
