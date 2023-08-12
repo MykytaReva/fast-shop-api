@@ -1,9 +1,15 @@
-from . import settings
-from .auth import oauth2_scheme
-from .database import SessionLocal
+import os
+
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
-from .models import User
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.session import Session
+
+from . import settings
+from .auth import oauth2_scheme
+from .database import Base, SessionLocal
+from .models import Shop, User
 from .schemas import TokenData
 from .test_config import SQLALCHEMY_DATABASE_URL
 
