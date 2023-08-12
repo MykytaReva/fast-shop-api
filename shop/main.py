@@ -53,7 +53,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     if user_data.role == schemas.UserRoleEnum.SHOP:
         if not user_data.shop_name:
             raise HTTPException(status_code=400, detail="Shop name is required.")
-        crud.get_shop_by_name(db, shop_name=user_data.shop_name)
+        crud.check_free_shop_name(db, shop_name=user_data.shop_name)
 
     # Create a new User object using UserCreate schema
     new_user = models.User(

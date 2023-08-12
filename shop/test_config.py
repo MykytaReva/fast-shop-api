@@ -1,1 +1,1 @@
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL_TEST = "sqlite:///./test.db"

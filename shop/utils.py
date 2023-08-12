@@ -8,21 +8,14 @@ from sqlalchemy.orm.session import Session
 
 from . import settings
 from .auth import oauth2_scheme
-from .database import Base, SessionLocal
+from .database import SessionLocal, TestingSessionLocal
 from .models import Shop, User
 from .schemas import TokenData
-from .test_config import SQLALCHEMY_DATABASE_URL
 
 
 # Dependency to get the database session
 def get_db():
     if os.getenv("ENVIRONMENT") == "test":
-        engine = create_engine(SQLALCHEMY_DATABASE_URL)
-        TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-        # Create tables in the in-memory test database
-        Base.metadata.create_all(bind=engine)
-
         db = TestingSessionLocal()
         yield db
         db.close()
@@ -60,8 +53,6 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     return user
 
 
-# function which will get the current user and check if this user has shop,
-# if user has shop we need to return a shop object
 def get_current_shop(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> Shop:
     if current_user.role == "SHOP":
         shop = db.query(Shop).filter(Shop.user_id == current_user.id).first()

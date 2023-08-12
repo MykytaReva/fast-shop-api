@@ -44,7 +44,7 @@ def check_free_username(db: Session, username: str):
     return existing_user
 
 
-def get_shop_by_name(db: Session, shop_name: str):
+def check_free_shop_name(db: Session, shop_name: str):
     if shop_name == "string":
         raise HTTPException(status_code=409, detail="Shop name was not provided.")
     existing_shop = db.query(Shop).filter(Shop.shop_name == shop_name).first()
