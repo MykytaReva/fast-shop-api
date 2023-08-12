@@ -21,6 +21,7 @@ def random_user_data(fake):
         "username": username,
         "email": email,
         "role": "CUSTOMER",
+        "shop_name": "CUSTOMER",
         "is_staff": False,
         "is_active": False,
         "is_superuser": False,
