@@ -80,3 +80,10 @@ def check_free_category_name(db: Session, shop_id: int, category_name: str):
     if existing_category:
         raise HTTPException(status_code=409, detail=f"You already have category with the name '{category_name}'.")
     return existing_category
+
+
+def get_category_by_slug(db: Session, shop_id: int, category_slug: str):
+    existing_category = db.query(Category).filter(Category.shop_id == shop_id, Category.slug == category_slug).first()
+    if not existing_category:
+        raise HTTPException(status_code=404, detail="Category not found.")
+    return existing_category
