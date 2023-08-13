@@ -1,11 +1,9 @@
 from test_user_crud import client, create_user, delete_user
 
 
+# TODO rewrite to JWT login
 def test_login_success(random_user_data):
     new_user = create_user(random_user_data)
-    # data = {
-    #     'username': new_user.json().get('username'),
-    #     'password': new_user.json().get('password')}
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
 
@@ -17,9 +15,6 @@ def test_login_success(random_user_data):
 
 def test_login_invalid_details(random_user_data):
     new_user = create_user(random_user_data)
-    # data = {
-    #     'username': new_user.json().get('username'),
-    #     'password': new_user.json().get('password')}
     data = {"username": random_user_data["email"], "password": "WRONG_PASSWORD"}
     response = client.post("/login", data=data)
 

@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from slugify import slugify
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -28,6 +29,7 @@ def get_all_users(db: Session = Depends(get_db)):
 
 
 # TODO rename to sign_up and change url
+# TODO add docs field
 @app.post("/signup/", response_model=schemas.UserOut)
 def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     """
@@ -204,3 +206,42 @@ def update_shop_details(
     db.refresh(current_shop)
 
     return current_shop
+
+
+@app.post("/category/", response_model=schemas.CategoryOut)
+def create_category(
+    category_data: schemas.CategoryCreate,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to create a new Category in the database.
+
+    Parameters:
+    - category_data (schemas.CategoryCreate): Category data received from the request body.
+
+    Returns:
+    - schemas.Category: The newly created Category as a Pydantic model.
+
+    Raises:
+    - HTTPException 400: If the request data is invalid.
+    - HTTPException 409: If the slug already exists in the database.
+    """
+    allowed_fields = set(schemas.CategoryCreate.model_fields.keys())
+    category_data_dict = category_data.model_dump()
+    crud.check_model_fields(category_data_dict, allowed_fields)
+
+    category_data.slug = f"{slugify(current_shop.shop_name)}-{slugify(category_data.name)}"
+    print(category_data)
+    print(current_shop)
+    print(current_shop.id)
+    new_category = models.Category(
+        shop_id=current_shop.id,
+        name=category_data.name,
+        slug=category_data.slug,
+    )
+    db.add(new_category)
+    db.commit()
+    db.refresh(new_category)
+
+    return new_category

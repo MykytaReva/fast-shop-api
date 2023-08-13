@@ -31,8 +31,8 @@ class User(Base):
     is_active = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
 
-    profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
-    shop = relationship("Shop", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    profile = relationship("UserProfile", uselist=False, back_populates="user")
+    shop = relationship("Shop", uselist=False, back_populates="user")
 
     # Property to access the hashed password
     @property

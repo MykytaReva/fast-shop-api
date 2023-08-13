@@ -193,3 +193,49 @@ class ShopOut(ShopPatch):
     is_approved: bool
     created_at: datetime
     modified_at: Optional[datetime] = None
+
+
+class CategoryBase(BaseModel):
+    """
+    Base Pydantic model for Category. Includes common fields for create and update operations.
+    """
+
+    name: Optional[str] = None
+    is_available: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class CategoryCreate(CategoryBase):
+    """
+    Pydantic model for creating a new Category.
+    Inherits from CategoryBase and includes a field for specifying shop_id to associate Category with Shop.
+    """
+
+    # shop_id: int
+    name: str
+
+
+class CategoryPatch(CategoryBase):
+    """
+    Pydantic model for partially updating an existing Category.
+    Inherits from CategoryBase and makes all fields optional.
+    """
+
+    pass
+
+
+class CategoryOut(CategoryBase):
+    """
+    Pydantic model for sending Category data in API responses.
+    Inherits from CategoryBase and is used for reading data from the API.
+    """
+
+    id: int
+    shop_id: int
+    name: str
+    slug: str
+    is_available: bool

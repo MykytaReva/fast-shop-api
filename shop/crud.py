@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from .models import Shop, User
+from .models import Category, Shop, User
 
 
 # TODO consider to refactor it to classes
@@ -59,3 +59,11 @@ def check_model_fields(user_data_dict, allowed_fields):
     for key, value in user_data_dict.items():
         if key not in allowed_fields:
             raise HTTPException(status_code=422, detail=f"Unrecognized field: {key}")
+
+
+def check_free_slug_category(db: Session, slug: str):
+    existing_category = db.query(Category).filter(Category.slug == slug).first()
+    if existing_category:
+        raise HTTPException(status_code=409, detail="Slug is already taken.")
+
+    return existing_category
