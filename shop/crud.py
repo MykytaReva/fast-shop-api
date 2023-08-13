@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from slugify import slugify
 from sqlalchemy.orm import Session
 
 from .models import Category, Shop, User
@@ -61,9 +62,21 @@ def check_model_fields(user_data_dict, allowed_fields):
             raise HTTPException(status_code=422, detail=f"Unrecognized field: {key}")
 
 
-def check_free_slug_category(db: Session, slug: str):
-    existing_category = db.query(Category).filter(Category.slug == slug).first()
-    if existing_category:
-        raise HTTPException(status_code=409, detail="Slug is already taken.")
+def generate_unique_category_slug(db: Session, shop_name: str, category_name: str):
+    unique_slug = f"{slugify(shop_name)}-{slugify(category_name)}"
+    counter = 1
 
+    while db.query(Category).filter(Category.slug == unique_slug).first():
+        unique_slug = f"{unique_slug}-{counter}"
+        counter += 1
+
+    return unique_slug
+
+
+def check_free_category_name(db: Session, shop_id: int, category_name: str):
+    if category_name == "string":
+        raise HTTPException(status_code=409, detail="Category name was not provided.")
+    existing_category = db.query(Category).filter(Category.shop_id == shop_id, Category.name == category_name).first()
+    if existing_category:
+        raise HTTPException(status_code=409, detail=f"You already have category with the name '{category_name}'.")
     return existing_category

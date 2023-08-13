@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
 from .auth import authenticate, create_access_token
+from .crud import check_free_category_name
 from .database import SessionLocal, engine
 from .utils import get_current_shop, get_current_user, get_db
 
@@ -230,8 +231,8 @@ def create_category(
     allowed_fields = set(schemas.CategoryCreate.model_fields.keys())
     category_data_dict = category_data.model_dump()
     crud.check_model_fields(category_data_dict, allowed_fields)
-
-    category_data.slug = f"{slugify(current_shop.shop_name)}-{slugify(category_data.name)}"
+    check_free_category_name(db, current_shop.id, category_data.name)
+    category_data.slug = crud.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
 
     new_category = models.Category(
         shop_id=current_shop.id,
