@@ -230,8 +230,10 @@ def create_category(
     """
     allowed_fields = set(schemas.CategoryCreate.model_fields.keys())
     category_data_dict = category_data.model_dump()
+
     crud.check_model_fields(category_data_dict, allowed_fields)
     check_free_category_name(db, current_shop.id, category_data.name)
+
     category_data.slug = crud.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
 
     new_category = models.Category(
@@ -313,3 +315,47 @@ def update_category(
     db.refresh(category)
 
     return category
+
+
+@app.post("/item/", response_model=schemas.ItemOut)
+def create_item(
+    item_data: schemas.ItemCreate,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to create a new Item in the database.
+
+    Parameters:
+    - item_data (schemas.ItemCreate): Item data received from the request body.
+
+    Returns:
+    - schemas.Item: The newly created Item as a Pydantic model.
+
+    Raises:
+    - HTTPException 400: If the request data is invalid.
+    - HTTPException 409: If the slug already exists in the database.
+    """
+    allowed_fields = set(schemas.ItemCreate.model_fields.keys())
+    item_data_dict = item_data.model_dump()
+
+    crud.check_model_fields(item_data_dict, allowed_fields)
+    crud.check_free_item_name(db, current_shop.id, item_data.name)
+
+    item_data.slug = crud.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
+
+    new_item = models.Item(
+        shop_id=current_shop.id,
+        category_id=item_data.category_id,
+        name=item_data.name,
+        slug=item_data.slug,
+        image=item_data.image,
+        title=item_data.title,
+        description=item_data.description,
+        price=item_data.price,
+    )
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+
+    return new_item

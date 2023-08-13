@@ -127,6 +127,7 @@ class Item(Base):
     category_id = Column(Integer, ForeignKey("category.id"))
 
     name = Column(String(55))
+    image = Column(String)
     title = Column(String(200))
     description = Column(Text)
     price = Column(Float(precision=2))
@@ -141,17 +142,3 @@ class Item(Base):
     # Relationships
     category = relationship("Category", back_populates="items")
     shop = relationship("Shop", back_populates="items")
-    item_images = relationship("ItemImage", back_populates="item")
-
-
-class ItemImage(Base):
-    __tablename__ = "item_image"
-
-    id = Column(Integer, primary_key=True, index=True)
-    item_id = Column(Integer, ForeignKey("item.id"))
-
-    image = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    item = relationship("Item", back_populates="item_images")

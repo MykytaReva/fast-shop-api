@@ -215,7 +215,6 @@ class CategoryCreate(CategoryBase):
     Inherits from CategoryBase and includes a field for specifying shop_id to associate Category with Shop.
     """
 
-    # shop_id: int
     name: str
 
 
@@ -239,3 +238,49 @@ class CategoryOut(CategoryBase):
     name: str
     slug: str
     is_available: bool
+
+
+class ItemCreate(BaseModel):
+    """
+    Pydantic model for creating a new Item.
+    """
+
+    category_id: int
+    name: str
+    image: str
+    title: str
+    description: str
+    price: float
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class ItemPatch(ItemCreate):
+    """
+    Base Pydantic model for Item. Includes common fields for create and update operations.
+    """
+
+    name: Optional[str] = None
+    image: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    is_available: Optional[bool] = None
+
+
+class ItemOut(ItemCreate):
+    """
+    Pydantic model for sending Item data in API responses.
+    Inherits from ItemBase and is used for reading data from the API.
+    """
+
+    id: int
+    name: str
+    slug: str
+    is_approved: bool
+    is_available: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from slugify import slugify
 from sqlalchemy.orm import Session
 
-from .models import Category, Shop, User
+from .models import Category, Item, Shop, User
 
 
 # TODO consider to refactor it to classes
@@ -87,3 +87,23 @@ def get_category_by_slug(db: Session, shop_id: int, category_slug: str):
     if not existing_category:
         raise HTTPException(status_code=404, detail="Category not found.")
     return existing_category
+
+
+def generate_unique_item_slug(db: Session, shop_name: str, item_name: str):
+    unique_slug = f"{slugify(shop_name)}-{slugify(item_name)}"
+    counter = 1
+
+    while db.query(Item).filter(Item.slug == unique_slug).first():
+        unique_slug = f"{unique_slug}-{counter}"
+        counter += 1
+
+    return unique_slug
+
+
+def check_free_item_name(db: Session, shop_id: int, item_name: str):
+    if item_name == "string":
+        raise HTTPException(status_code=409, detail="Item name was not provided.")
+    existing_item = db.query(Item).filter(Item.shop_id == shop_id, Item.name == item_name).first()
+    if existing_item:
+        raise HTTPException(status_code=409, detail=f"You already have item with the name '{item_name}'.")
+    return existing_item
