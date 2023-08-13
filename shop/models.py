@@ -31,8 +31,8 @@ class User(Base):
     is_active = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
 
-    profile = relationship("UserProfile", uselist=False, back_populates="user")
-    shop = relationship("Shop", uselist=False, back_populates="user")
+    profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    shop = relationship("Shop", uselist=False, back_populates="user", cascade="all, delete-orphan")
 
     # Property to access the hashed password
     @property
@@ -99,8 +99,8 @@ class Shop(Base):
     modified_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    categories = relationship("Category", back_populates="shop")
-    items = relationship("Item", back_populates="shop")
+    categories = relationship("Category", back_populates="shop", cascade="all, delete-orphan")
+    items = relationship("Item", back_populates="shop", cascade="all, delete-orphan")
     user = relationship("User", back_populates="shop", uselist=False)
 
 

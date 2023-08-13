@@ -232,9 +232,7 @@ def create_category(
     crud.check_model_fields(category_data_dict, allowed_fields)
 
     category_data.slug = f"{slugify(current_shop.shop_name)}-{slugify(category_data.name)}"
-    print(category_data)
-    print(current_shop)
-    print(current_shop.id)
+
     new_category = models.Category(
         shop_id=current_shop.id,
         name=category_data.name,
