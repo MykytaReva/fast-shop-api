@@ -269,6 +269,7 @@ class ItemPatch(ItemCreate):
     description: Optional[str] = None
     price: Optional[float] = None
     is_available: Optional[bool] = None
+    category_id: Optional[int] = None
 
 
 class ItemOut(ItemCreate):

@@ -16,7 +16,6 @@ def create_user(data):
     return client.post("/signup/", json=data)
 
 
-# TODO rewrite delete user from db. Now it is not working
 def delete_user(response_json):
     db = TestingSessionLocal()
     user_id = response_json.json().get("id")
@@ -29,7 +28,7 @@ def delete_user(response_json):
 
 
 def get_headers(user_id: int):
-    token = create_access_token(sub=user_id)
+    token = create_access_token(sub=str(user_id))
     return {"Authorization": f"Bearer {token}"}
 
 

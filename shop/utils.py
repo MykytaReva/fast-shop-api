@@ -58,4 +58,4 @@ def get_current_shop(current_user: User = Depends(get_current_user), db: Session
         shop = db.query(Shop).filter(Shop.user_id == current_user.id).first()
         return shop
     else:
-        raise HTTPException(status_code=404, detail="User is not a shop.")
+        raise HTTPException(status_code=403, detail="Forbidden.")

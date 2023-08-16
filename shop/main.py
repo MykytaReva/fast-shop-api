@@ -29,8 +29,6 @@ def get_all_users(db: Session = Depends(get_db)):
     return users
 
 
-# TODO rename to sign_up and change url
-# TODO add docs field
 @app.post("/signup/", response_model=schemas.UserOut)
 def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     """
@@ -70,7 +68,9 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user.set_password(user_data.password)
     new_user.profile = models.UserProfile()
     if new_user.role == schemas.UserRoleEnum.SHOP:
-        new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name)
+        slug = crud.generate_unique_shop_slug(db, user_data.shop_name)
+        new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name, slug=slug)
+        # new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name)
 
     # Add the new user to the database
     db.add(new_user)
@@ -104,7 +104,7 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
     return user
 
 
-# TODO consider make it with a userprofile fields
+# TODO consider make response_model with a userprofile fields in future
 @app.get("/user/{user_id}", response_model=schemas.UserOut)
 def read_user(user_id: int, db: SessionLocal = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -119,7 +119,6 @@ def delete_user(current_user: models.User = Depends(get_current_user), db: Sessi
     return {"message": "User deleted successfully."}
 
 
-# TODO returns profile fields as a null in UserProfileOut response model
 # TODO add notification that not possible to patch email
 @app.patch("/user/", response_model=schemas.UserProfileOut)
 def update_user_details(
@@ -175,12 +174,22 @@ def update_user_details(
     return current_user
 
 
-@app.get("/shop/", response_model=schemas.ShopOut)
-def get_shop_details(current_shop: models.Shop = Depends(get_current_shop)):
+@app.get("/shop/{shop_slug}", response_model=schemas.ShopOut)
+def get_shop(shop_slug: str, db: Session = Depends(get_db)):
     """
-    Get the shop details of the current logged-in user.
+    Endpoint to get a Shop from the database.
+
+    Parameters:
+    - shop_slug (str): The slug of the Shop to be fetched.
+
+    Returns:
+    - schemas.Shop: The fetched Shop as a Pydantic model.
+
+    Raises:
+    - HTTPException 404: If the Shop with the given slug does not exist.
     """
-    return current_shop
+    shop = crud.get_shop_by_slug(db, shop_slug)
+    return shop
 
 
 @app.patch("/shop/", response_model=schemas.ShopOut)
@@ -198,6 +207,8 @@ def update_shop_details(
             if value != current_value:
                 if key == "shop_name":
                     crud.check_free_shop_name(db, value)
+                    new_slug = crud.generate_unique_shop_slug(db, value)
+                    current_shop.slug = new_slug
                 setattr(current_shop, key, value)
                 changed += 1
     if not changed:
@@ -359,3 +370,94 @@ def create_item(
     db.refresh(new_item)
 
     return new_item
+
+
+@app.patch("/item/{item_slug}/", response_model=schemas.ItemOut)
+def update_item(
+    item_data: schemas.ItemPatch,
+    item_slug: str,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to update an Item in the database.
+
+    Parameters:
+    - item_data (schemas.ItemUpdate): Item data received from the request body.
+    - item_slug (str): The slug of the Item to be updated.
+
+    Returns:
+    - schemas.Item: The updated Item as a Pydantic model.
+
+    Raises:
+    - HTTPException 400: If the request data is invalid.
+    - HTTPException 404: If the Item with the given slug does not exist.
+    """
+    allowed_fields = set(schemas.ItemPatch.model_fields.keys())
+    item_data_dict = item_data.model_dump()
+    crud.check_model_fields(item_data_dict, allowed_fields)
+
+    item = crud.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
+    crud.check_item_owner(db, current_shop.id, item_slug)
+    changed = 0
+    for key, value in item_data_dict.items():
+        current_value = getattr(item, key)
+        if value is not None:
+            if value != current_value:
+                if key == "name":
+                    crud.check_free_item_name(db, current_shop.id, value)
+                setattr(item, key, value)
+                changed += 1
+    if not changed:
+        raise HTTPException(status_code=422, detail="Model was not changed.")
+
+    db.commit()
+    db.refresh(item)
+
+    return item
+
+
+@app.delete("/item/{item_slug}/", response_model=schemas.ItemOut)
+def delete_item(
+    item_slug: str,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to delete an Item from the database.
+
+    Parameters:
+    - item_slug (str): The slug of the Item to be deleted.
+
+    Returns:
+    - schemas.Item: The deleted Item as a Pydantic model.
+
+    Raises:
+    - HTTPException 404: If the Item with the given slug does not exist.
+    """
+    item = crud.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
+    # crud.check_item_owner(db, current_shop.id, item_slug)
+    db.delete(item)
+    db.commit()
+    return item
+
+
+@app.get("/item/{item_slug}/", response_model=schemas.ItemOut)
+def get_item(
+    item_slug: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get an Item from the database.
+
+    Parameters:
+    - item_slug (str): The slug of the Item to be fetched.
+
+    Returns:
+    - schemas.Item: The fetched Item as a Pydantic model.
+
+    Raises:
+    - HTTPException 404: If the Item with the given slug does not exist.
+    """
+    item = crud.get_item_by_slug(db, item_slug)
+    return item

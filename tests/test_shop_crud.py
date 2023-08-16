@@ -1,7 +1,16 @@
+from fastapi import HTTPException
 from test_user_crud import client, create_user, delete_user, get_headers
 
 from shop.database import TestingSessionLocal
 from shop.models import Shop
+
+
+def get_shop_slug_by_shop_id(shop_id: int):
+    db = TestingSessionLocal()
+    shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found.")
+    return shop.slug
 
 
 def test_patch_shop_success(random_user_data, fake):
@@ -82,15 +91,22 @@ def test_get_shop_details(random_user_data, random_user_data_shop, fake):
     random_user_data["role"] = "SHOP"
     new_user = create_user(random_user_data)
     assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
+    shop_id = new_user.json()["id"]
     data = {
         "shop_name": random_user_data_shop["shop_name"],
         "description": random_user_data_shop["description"],
     }
-    response_patch = client.patch(f"shop/", headers=get_headers(user_id), json=data)
+    response_patch = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
     assert response_patch.status_code == 200
-    response = client.get(f"shop/", headers=get_headers(user_id))
+    shop_slug = get_shop_slug_by_shop_id(shop_id)
+    response = client.get(f"shop/{shop_slug}/")
     assert response.status_code == 200
     assert response.json()["shop_name"] == random_user_data_shop["shop_name"]
     assert response.json()["description"] == random_user_data_shop["description"]
     delete_user(new_user)
+
+
+def test_get_shop_404(random_user_data, random_user_data_shop, fake):
+    response = client.get("shop/fake-slug/")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Shop not found."}

@@ -45,6 +45,13 @@ def check_free_username(db: Session, username: str):
     return existing_user
 
 
+def get_shop_by_slug(db: Session, shop_slug: str):
+    existing_shop = db.query(Shop).filter(Shop.slug == shop_slug).first()
+    if not existing_shop:
+        raise HTTPException(status_code=404, detail="Shop not found.")
+    return existing_shop
+
+
 def check_free_shop_name(db: Session, shop_name: str):
     if shop_name == "string":
         raise HTTPException(status_code=409, detail="Shop name was not provided.")
@@ -67,6 +74,17 @@ def generate_unique_category_slug(db: Session, shop_name: str, category_name: st
     counter = 1
 
     while db.query(Category).filter(Category.slug == unique_slug).first():
+        unique_slug = f"{unique_slug}-{counter}"
+        counter += 1
+
+    return unique_slug
+
+
+def generate_unique_shop_slug(db: Session, shop_name: str):
+    counter = 1
+    unique_slug = shop_name
+
+    while db.query(Shop).filter(Shop.slug == unique_slug).first():
         unique_slug = f"{unique_slug}-{counter}"
         counter += 1
 
@@ -106,4 +124,34 @@ def check_free_item_name(db: Session, shop_id: int, item_name: str):
     existing_item = db.query(Item).filter(Item.shop_id == shop_id, Item.name == item_name).first()
     if existing_item:
         raise HTTPException(status_code=409, detail=f"You already have item with the name '{item_name}'.")
+    return existing_item
+
+
+# TODO for better understanding consider add one more query to check
+#  if category with the given slug exists in general and than check the shop owner
+def get_item_by_slug_for_shop(db: Session, shop_id: int, item_slug: str):
+    existing_item = db.query(Item).filter(Item.shop_id == shop_id, Item.slug == item_slug).first()
+    if not existing_item:
+        raise HTTPException(status_code=404, detail="Item not found.")
+    return existing_item
+
+
+def get_item_by_slug(db: Session, item_slug: str):
+    existing_item = db.query(Item).filter(Item.slug == item_slug).first()
+    if not existing_item:
+        raise HTTPException(status_code=404, detail="Item not found.")
+    return existing_item
+
+
+def check_item_owner(db: Session, shop_id: int, item_slug: str):
+    existing_item = (
+        db.query(Item)
+        .filter(
+            Item.shop_id == shop_id,
+            Item.slug == item_slug,
+        )
+        .first()
+    )
+    if not existing_item:
+        raise HTTPException(status_code=403, detail="Forbidden.")
     return existing_item

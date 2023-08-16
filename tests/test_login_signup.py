@@ -1,7 +1,6 @@
 from test_user_crud import client, create_user, delete_user
 
 
-# TODO rewrite to JWT login
 def test_login_success(random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
