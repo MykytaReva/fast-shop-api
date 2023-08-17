@@ -1,11 +1,11 @@
-from . import crud
-from .import models
-from . import schemas
-from .auth import authenticate, create_access_token
-from .database import SessionLocal, engine
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
+from . import crud, models, schemas
+from .auth import authenticate, create_access_token
+from .database import SessionLocal, engine
+from .smtp_email import send_email_with_sendgrid
 from .utils import get_current_user, get_db
 
 app = FastAPI()
@@ -160,3 +160,12 @@ def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: 
     db.refresh(user)
 
     return user
+
+
+@app.get("/get_email/")
+async def get_email():
+    subject = "why 202 and no email"
+    to_email = "mykytareva@gmail.com"
+    html_content = "<strong>and easy to do anywhere, even with Python</strong>"
+    send_email_with_sendgrid(subject, to_email, html_content)
+    return {"message": "Email has been sent successfully."}
