@@ -1,8 +1,5 @@
 from test_user_crud import client, create_user, delete_user, get_headers
 
-from shop.database import TestingSessionLocal
-from shop.models import Shop
-
 
 def test_category_create_success(random_user_data, fake):
     random_user_data["role"] = "SHOP"

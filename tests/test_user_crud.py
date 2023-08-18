@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from shop import models, schemas
 from shop.auth import create_access_token

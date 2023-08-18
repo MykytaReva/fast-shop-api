@@ -79,7 +79,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     db.close()
-    send_activation_email(new_user.id, db)
+    # send_activation_email(new_user.id, db)
     # Return the newly created user as a Pydantic model
     return new_user
 
