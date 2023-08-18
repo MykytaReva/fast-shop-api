@@ -1,13 +1,18 @@
 import os
 
 from dotenv import load_dotenv
+from jose import jwt
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+
+from shop import settings
+from shop.database import SessionLocal
+from shop.models import User
 
 load_dotenv()
 
 
-def send_email_with_sendgrid(subject, to_email, html_content):
+def send_activation_email(user_id: int, db: SessionLocal):
     try:
         # Get your SendGrid API key from environment variables
         sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
@@ -18,9 +23,17 @@ def send_email_with_sendgrid(subject, to_email, html_content):
         # Create a SendGrid client
         sg = SendGridAPIClient(sendgrid_api_key)
 
+        user_email = db.query(User).filter(User.id == user_id).first().email
+        subject = "Welcome to our shop!"
+        token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+        html_content = (
+            "You have successfully registered to our shop."
+            f" Please click <a href='http://127.0.0.1:8000/verification/?token={token}'>here</a>"
+            " to activate your account."
+        )
         # Create a Mail object
         message = Mail(
-            from_email=os.environ.get("FROM_EMAIL"), to_emails=to_email, subject=subject, html_content=html_content
+            from_email=os.environ.get("FROM_EMAIL"), to_emails=user_email, subject=subject, html_content=html_content
         )
 
         # Send the email

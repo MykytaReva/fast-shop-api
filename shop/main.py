@@ -1,11 +1,12 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
-from .auth import authenticate, create_access_token
+from .auth import authenticate, create_access_token, verify_token
 from .database import SessionLocal, engine
-from .smtp_email import send_email_with_sendgrid
+from .smtp_email import send_activation_email
 from .utils import get_current_user, get_db
 
 app = FastAPI()
@@ -69,6 +70,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     db.close()
+    send_activation_email(new_user.id, db)
     # Return the newly created user as a Pydantic model
     return new_user
 
@@ -162,10 +164,16 @@ def update_user_details(user_id: int, user_data: schemas.UserCompletePatch, db: 
     return user
 
 
-@app.get("/get_email/")
-async def get_email():
-    subject = "why 202 and no email"
-    to_email = "mykytareva@gmail.com"
-    html_content = "<strong>and easy to do anywhere, even with Python</strong>"
-    send_email_with_sendgrid(subject, to_email, html_content)
-    return {"message": "Email has been sent successfully."}
+@app.get("/verification/", response_class=HTMLResponse)
+async def email_verification(request: Request, token: str, db: Session = Depends(get_db)):
+    """
+    Endpoint to verify user's email.
+    """
+    user = verify_token(token, db)
+    if user and not user.is_active:
+        user.is_active = True
+        db.commit()
+        db.refresh(user)
+        return HTMLResponse(content="<h1>Email verified</h1>", status_code=200)
+    else:
+        return HTMLResponse(content="<h1>Your account already activated.</h1>", status_code=400)

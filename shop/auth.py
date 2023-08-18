@@ -1,12 +1,15 @@
 from datetime import datetime, timedelta
 from typing import List, MutableMapping, Optional, Union
 
-from . import settings
+from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from .models import User
+from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm.session import Session
+
+from . import settings
+from .models import User
 
 JWTPayloadMapping = MutableMapping[str, Union[datetime, bool, str, List[str], List[int]]]
 
@@ -45,3 +48,20 @@ def _create_token(token_type: str, lifetime: timedelta, sub: str) -> str:
     payload["sub"] = str(sub)
 
     return jwt.encode(payload, settings.JWT_SECRET, settings.ALGORITHM)
+
+
+def verify_token(token: str, db: Session):
+
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
+        user = db.query(User).filter(User.id == payload.get("sub")).first()
+        if user:
+            return user
+        else:
+            raise HTTPException(status_code=401, detail="User not found.")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired.")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    return user
