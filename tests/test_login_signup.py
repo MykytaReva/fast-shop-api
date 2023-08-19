@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta
+
+from jose import jwt
 from test_user_crud import client, create_user, delete_user
+
+from shop import settings
 
 
 def test_login_success(random_user_data):
@@ -92,3 +97,46 @@ def test_create_user_username_taken(random_user_data, fake):
     assert user_2.json() == {"detail": "Username is already taken."}
     delete_user(user_1)
     delete_user(user_2)
+
+
+def test_email_verification_success(random_user_data):
+    new_user = create_user(random_user_data)
+    assert new_user.status_code == 200
+    user_id = new_user.json()["id"]
+    token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+    response = client.get(f"/verification/?token={token}")
+    assert response.status_code == 200
+    delete_user(new_user)
+
+
+def test_email_verification_invalid_token(random_user_data):
+    new_user = create_user(random_user_data)
+    assert new_user.status_code == 200
+    user_id = new_user.json()["id"]
+    token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=settings.ALGORITHM)
+    response = client.get(f"/verification/?token={token}")
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Invalid token."}
+    delete_user(new_user)
+
+
+def test_email_verification_expired_token(random_user_data):
+    new_user = create_user(random_user_data)
+    assert new_user.status_code == 200
+    user_id = new_user.json()["id"]
+    # Generate token with a future expiration time for the first verification
+    future_expiration = datetime.utcnow() + timedelta(hours=1)
+    token = jwt.encode(
+        {"sub": str(user_id), "exp": future_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+    )
+    response = client.get(f"/verification/?token={token}")
+    assert response.status_code == 200
+    # Generate token with a past expiration time for the second verification
+    past_expiration = datetime.utcnow() - timedelta(hours=1)
+    exp_token = jwt.encode(
+        {"sub": str(user_id), "exp": past_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+    )
+    response = client.get(f"/verification/?token={exp_token}")
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Token has expired."}
+    delete_user(new_user)

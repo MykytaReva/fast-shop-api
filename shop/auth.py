@@ -63,5 +63,3 @@ def verify_token(token: str, db: Session):
         raise HTTPException(status_code=401, detail="Token has expired.")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token.")
-
-    return user

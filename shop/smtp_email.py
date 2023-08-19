@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from jose import jwt
@@ -25,7 +26,10 @@ def send_activation_email(user_id: int, db: SessionLocal):
 
         user_email = db.query(User).filter(User.id == user_id).first().email
         subject = "Welcome to our shop!"
-        token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+        expiration_time = datetime.utcnow() + timedelta(minutes=5)
+        token = jwt.encode(
+            {"sub": str(user_id), "exp": expiration_time}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        )
         html_content = (
             "You have successfully registered to our shop."
             f" Please click <a href='http://127.0.0.1:8000/verification/?token={token}'>here</a>"
@@ -37,11 +41,14 @@ def send_activation_email(user_id: int, db: SessionLocal):
         )
 
         # Send the email
-        response = sg.send(message)
-
-        if response.status_code == 202:
+        if os.environ.get("ENVIRONMENT") == "test":
+            print('You cannot send emails in "test" environment.')
             return {"message": "Email sent successfully."}
         else:
-            return {"message": "Failed to send email."}
+            response = sg.send(message)
+            if response.status_code == 202:
+                return {"message": "Email sent successfully."}
+            else:
+                return {"message": "Failed to send email."}
     except Exception as e:
         print("An error occurred:", str(e))
