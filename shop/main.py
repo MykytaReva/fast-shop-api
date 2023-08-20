@@ -621,6 +621,6 @@ def subtract_from_the_cart(
             else:
                 db.delete(cart_item)
                 db.commit()
-                return {"message": "Item removed from the cart."}
+                return {"detail": "Item removed from the cart."}
         else:
-            return {"message": "Item already removed from the cart."}
+            return {"detail": "Item already removed from the cart."}
