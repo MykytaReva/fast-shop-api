@@ -556,4 +556,4 @@ async def reset_password(token: str, request: Request, db: Session = Depends(get
         user.set_password(new_password)
         db.commit()
         db.refresh(user)
-        return {"message": "Password has been changed."}
+        return {"detail": "Password has been changed."}

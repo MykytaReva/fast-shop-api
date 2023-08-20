@@ -58,7 +58,7 @@ def verify_token(token: str, db: Session):
         if user:
             return user
         else:
-            raise HTTPException(status_code=401, detail="User not found.")
+            raise HTTPException(status_code=404, detail="User not found.")
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired.")
     except JWTError:
