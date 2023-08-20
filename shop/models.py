@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -75,6 +75,7 @@ class UserProfile(Base):
     user = relationship("User", back_populates="profile", uselist=False)
 
 
+# TODO add docs field
 class Shop(Base):
     """
     SQLAlchemy model for Shop.

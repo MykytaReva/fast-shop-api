@@ -1,14 +1,13 @@
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from slugify import slugify
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
 from .auth import authenticate, create_access_token, verify_token
 from .crud import check_free_category_name
 from .database import SessionLocal, engine
-from .smtp_email import send_activation_email
+from .smtp_email import send_activation_email, send_reset_password_email
 from .utils import get_current_shop, get_current_user, get_db
 
 app = FastAPI()
@@ -19,7 +18,40 @@ models.Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    # for fun
+    content = """
+    <h1>Sign Up</h1>
+    <form action="/signup/" method="post">
+        <!-- User Data -->
+        <label for="first_name">First Name:</label>
+        <input type="text" name="first_name"><br>
+
+        <label for="last_name">Last Name:</label>
+        <input type="text" name="last_name"><br>
+
+        <label for="username">Username:</label>
+        <input type="text" name="username"><br>
+
+        <label for="email">Email:</label>
+        <input type="email" name="email"><br>
+
+        <label for="password">Password:</label>
+        <input type="password" name="password"><br>
+
+        <label for="role">Role:</label>
+        <select name="role">
+            <option value="USER">User</option>
+            <option value="SHOP">Shop</option>
+        </select><br>
+
+        <!-- Shop Name (if role is SHOP) -->
+        <label for="shop_name">Shop Name:</label>
+        <input type="text" name="shop_name"><br>
+
+        <input type="submit" value="Sign Up">
+    </form>
+        """
+    return HTMLResponse(content=content)
 
 
 @app.get("/users/", response_model=list[schemas.UserOut])
@@ -32,7 +64,7 @@ def get_all_users(db: Session = Depends(get_db)):
 
 
 @app.post("/signup/", response_model=schemas.UserOut)
-def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+async def signup(user_data: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Endpoint to create a new user in the database.
 
@@ -52,7 +84,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     crud.check_model_fields(user_data_dict, allowed_fields)
 
     # tests if user exists and handle unique constraints error
-    crud.get_user_by_email_or_username(db, email=user_data.email, username=user_data.username)
+    crud.check_user_email_or_username(db, email=user_data.email, username=user_data.username)
     if user_data.role == schemas.UserRoleEnum.SHOP:
         if not user_data.shop_name:
             raise HTTPException(status_code=400, detail="Shop name is required.")
@@ -80,7 +112,7 @@ def signup(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     db.close()
 
-    send_activation_email(new_user.id, db)
+    background_tasks.add_task(send_activation_email, new_user.id, db)
 
     return new_user
 
@@ -466,6 +498,7 @@ def get_item(
     return item
 
 
+# TODO HTMLResponse?
 @app.get("/verification/", response_class=HTMLResponse)
 async def email_verification(request: Request, token: str, db: Session = Depends(get_db)):
     """
@@ -479,3 +512,48 @@ async def email_verification(request: Request, token: str, db: Session = Depends
         return HTMLResponse(content="<h1>Email verified</h1>", status_code=200)
     else:
         return HTMLResponse(content="<h1>Your account already activated.</h1>", status_code=400)
+
+
+@app.get("/reset-password/")
+async def request_password_reset():
+    """
+    Endpoint to request password reset.
+    """
+    return {"message": "Please provide email address"}
+
+
+@app.post("/reset-password/")
+async def request_password_reset(email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Endpoint to request email for password reset.
+    """
+    user = crud.get_user_by_email(db, email=email)
+    if user:
+        background_tasks.add_task(send_reset_password_email, user_id=user.id, email=email, db=db)
+        send_reset_password_email(user_id=user.id, email=email, db=db)
+        return {"message": f"Link to reset password has been sent to {email}"}
+
+
+@app.get("/reset-password/verify/")
+async def verify_reset_token(token: str, db: Session = Depends(get_db)):
+    """
+    Endpoint to verify reset password token.
+    """
+    user = verify_token(token, db)
+    if user:
+        return {"message": "Please provide new password."}
+
+
+@app.post("/reset-password/verify/")
+async def reset_password(token: str, request: Request, db: Session = Depends(get_db)):
+    """
+    Endpoint to change password.
+    """
+    data = await request.json()
+    new_password = data.get("new_password")
+    user = verify_token(token, db)
+    if user:
+        user.set_password(new_password)
+        db.commit()
+        db.refresh(user)
+        return {"message": "Password has been changed."}

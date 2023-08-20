@@ -46,6 +46,46 @@ def send_activation_email(user_id: int, db: SessionLocal):
             return {"message": "Email sent successfully."}
         else:
             response = sg.send(message)
+            # response = await sg.send(message)
+            if response.status_code == 202:
+                return {"message": "Email sent successfully."}
+            else:
+                return {"message": "Failed to send email."}
+    except Exception as e:
+        print("An error occurred:", str(e))
+
+
+def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
+    try:
+        # Get your SendGrid API key from environment variables
+        sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+
+        if not sendgrid_api_key:
+            raise Exception("SendGrid API key is missing")
+
+        # Create a SendGrid client
+        sg = SendGridAPIClient(sendgrid_api_key)
+
+        subject = "Reset Your Password"
+        expiration_time = datetime.utcnow() + timedelta(hours=12)
+        reset_token = jwt.encode(
+            {"sub": str(user_id), "exp": expiration_time}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        )
+        html_content = (
+            f"Click <a href='http://127.0.0.1:8000/reset-password/verify/?token={reset_token}'>here</a>"
+            " to reset your password."
+        )
+        # Create a Mail object
+        message = Mail(
+            from_email=os.environ.get("FROM_EMAIL"), to_emails=email, subject=subject, html_content=html_content
+        )
+
+        # Send the email
+        if os.environ.get("ENVIRONMENT") == "test":
+            print('You cannot send emails in "test" environment.')
+            return {"message": "Email sent successfully."}
+        else:
+            response = sg.send(message)
             if response.status_code == 202:
                 return {"message": "Email sent successfully."}
             else:

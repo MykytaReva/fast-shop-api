@@ -6,7 +6,7 @@ from .models import Category, Item, Shop, User
 
 
 # TODO consider to refactor it to classes
-def get_user_by_email_or_username(db: Session, email: str, username: str):
+def check_user_email_or_username(db: Session, email: str, username: str):
     if email:
         existing_user = db.query(User).filter(User.email == email).first()
         if existing_user:
@@ -32,6 +32,13 @@ def delete_user_by_id(db: Session, user_id: int):
 
 def get_user_by_id(db: Session, user_id: int):
     existing_user = db.query(User).filter(User.id == user_id).first()
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return existing_user
+
+
+def get_user_by_email(db: Session, email: str):
+    existing_user = db.query(User).filter(User.email == email).first()
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found.")
     return existing_user
