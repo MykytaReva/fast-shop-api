@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .database import Base
-from .schemas import UserRoleEnum
+from .schemas import ShopOrderStatusEnum, UserRoleEnum
 
 
 class User(Base):
@@ -34,6 +34,7 @@ class User(Base):
     profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
     shop = relationship("Shop", uselist=False, back_populates="user", cascade="all, delete-orphan")
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
 
     # Property to access the hashed password
     @property
@@ -66,7 +67,6 @@ class UserProfile(Base):
     address = Column(String(250), nullable=True)
     country = Column(String(16), nullable=True)
     city = Column(String(16), nullable=True)
-    state = Column(String(40), nullable=True)
     pin_code = Column(String(15), nullable=True)
 
     created_at = Column(DateTime, nullable=False, server_default=func.now())
@@ -76,7 +76,6 @@ class UserProfile(Base):
     user = relationship("User", back_populates="profile", uselist=False)
 
 
-# TODO add docs field
 class Shop(Base):
     """
     SQLAlchemy model for Shop.
@@ -104,6 +103,7 @@ class Shop(Base):
     categories = relationship("Category", back_populates="shop", cascade="all, delete-orphan")
     items = relationship("Item", back_populates="shop", cascade="all, delete-orphan")
     user = relationship("User", back_populates="shop", uselist=False)
+    shop_orders = relationship("ShopOrder", back_populates="shop", cascade="all, delete-orphan")
 
 
 class Category(Base):
@@ -145,6 +145,7 @@ class Item(Base):
     category = relationship("Category", back_populates="items")
     shop = relationship("Shop", back_populates="items")
     cart_items = relationship("CartItem", back_populates="item", cascade="all, delete-orphan")
+    order_items = relationship("OrderItem", back_populates="item", cascade="all, delete-orphan")
 
 
 class CartItem(Base):
@@ -163,3 +164,60 @@ class CartItem(Base):
     # Relationships
     user = relationship("User", back_populates="cart_items", uselist=False)
     item = relationship("Item", back_populates="cart_items")
+
+
+class Order(Base):
+    __tablename__ = "order"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    first_name = Column(String(50))
+    last_name = Column(String(50))
+    phone_number = Column(String(14), nullable=True)
+    address = Column(String(250), nullable=True)
+    country = Column(String(16), nullable=True)
+    city = Column(String(16), nullable=True)
+    pin_code = Column(String(15), nullable=True)
+
+    billing_status = Column(Boolean, default=False)
+    order_key = Column(String(200))
+    total_paid = Column(Float(precision=2))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    modified_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="orders")
+    order_items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    shop_orders = relationship("ShopOrder", back_populates="order", cascade="all, delete-orphan")
+
+
+class OrderItem(Base):
+    __tablename__ = "order_item"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("order.id"))
+    item_id = Column(Integer, ForeignKey("item.id"))
+
+    price = Column(Float(precision=2))
+    quantity = Column(Integer, default=1)
+
+    # Relationships
+    order = relationship("Order", back_populates="order_items")
+    item = relationship("Item", back_populates="order_items")
+
+
+class ShopOrder(Base):
+    __tablename__ = "shop_order"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shop_id = Column(Integer, ForeignKey("shop.id"))
+    order_id = Column(Integer, ForeignKey("order.id"))
+
+    total_paid = Column(Float(precision=2))
+    status = Column(Enum(ShopOrderStatusEnum), default=ShopOrderStatusEnum.NEW)
+
+    # Relationships
+    shop = relationship("Shop", back_populates="shop_orders")
+    order = relationship("Order", back_populates="shop_orders")
