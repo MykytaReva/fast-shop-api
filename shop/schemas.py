@@ -11,6 +11,12 @@ class UserRoleEnum(str, Enum):
     CUSTOMER = "CUSTOMER"
 
 
+class ShopOrderStatusEnum(str, Enum):
+    NEW = "New"
+    IN_PROCESS = "In Process"
+    SENT = "Sent"
+
+
 class UserBase(BaseModel):
     """
     Base Pydantic model for User. Includes common fields for create and update operations.
@@ -171,7 +177,7 @@ class ShopPatch(BaseModel):
 
     shop_name: Optional[str] = None
     description: Optional[str] = None
-    docs: Optional[str] = None
+    docs: Optional[UploadFile] = None
     avatar: Optional[UploadFile] = None
     cover_photo: Optional[UploadFile] = None
 
@@ -326,3 +332,91 @@ class CartOut(CartBase):
     item_id: int
     quantity: int
     price: float
+
+
+class OrderBase(BaseModel):
+    """
+    Pydantic model for creating a new Order.
+    Inherits from OrderBase and includes a field for specifying user_id to associate Order with User.
+    """
+
+    first_name: str
+    last_name: str
+    phone_number: str
+    address: str
+    country: str
+    city: str
+    state: str
+    pin_code: str
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class OrderOut(OrderBase):
+    """
+    Pydantic model for sending Order data in API responses.
+    """
+
+    billing_status: bool
+    total_paid: float
+    created_at: datetime
+
+
+class OrderItemCreate(BaseModel):
+    """
+    Pydantic model for creating a new OrderItem.
+    Inherits from OrderItemBase and includes a field for specifying order_id to associate OrderItem with Order.
+    """
+
+    item_id: int
+    order_id: int
+    quantity: int
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class OrderItemOut(OrderItemCreate):
+    """
+    Pydantic model for sending OrderItem data in API responses.
+    Inherits from OrderItemBase and is used for reading data from the API.
+    """
+
+    id: int
+    price: float
+    quantity: int
+    created_at: datetime
+
+
+class ShopOrderBase(BaseModel):
+    """
+    Pydantic model for creating a new ShopOrder.
+    Inherits from ShopOrderBase and includes a field for specifying order_id to associate ShopOrder with Order.
+    """
+
+    order_id: int
+    shop_id: int
+    status: ShopOrderStatusEnum
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class ShopOrderOut(ShopOrderBase):
+    """
+    Pydantic model for sending ShopOrder data in API responses.
+    Inherits from ShopOrderBase and is used for reading data from the API.
+    """
+
+    price: float
+    status: ShopOrderStatusEnum
+    total_paid: float
+    created_at: datetime
+    modified_at: Optional[datetime] = None
