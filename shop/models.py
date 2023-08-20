@@ -33,6 +33,7 @@ class User(Base):
 
     profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
     shop = relationship("Shop", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
 
     # Property to access the hashed password
     @property
@@ -143,3 +144,22 @@ class Item(Base):
     # Relationships
     category = relationship("Category", back_populates="items")
     shop = relationship("Shop", back_populates="items")
+    cart_items = relationship("CartItem", back_populates="item", cascade="all, delete-orphan")
+
+
+class CartItem(Base):
+    __tablename__ = "cart"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    item_id = Column(Integer, ForeignKey("item.id"))
+
+    quantity = Column(Integer, default=1)
+    price = Column(Float(precision=2))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="cart_items", uselist=False)
+    item = relationship("Item", back_populates="cart_items")

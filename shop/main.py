@@ -1,3 +1,5 @@
+from typing import Union
+
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -557,3 +559,68 @@ async def reset_password(token: str, request: Request, db: Session = Depends(get
         db.commit()
         db.refresh(user)
         return {"detail": "Password has been changed."}
+
+
+@app.post("/add-to-the-cart/{item_slug}", response_model=schemas.CartOut)
+def add_to_the_cart(
+    item_slug: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to add an Item to the Cart.
+    """
+    item = crud.get_item_by_slug(db, item_slug)
+    if item:
+        cart_item = crud.get_cart_item(db, current_user.id, item.id)
+        if cart_item:
+            cart_item.quantity += 1
+            cart_item.price = item.price * cart_item.quantity
+            db.commit()
+            db.refresh(cart_item)
+            return cart_item
+        else:
+            cart_item = models.CartItem(user_id=current_user.id, item_id=item.id, price=item.price)
+            db.add(cart_item)
+            db.commit()
+            db.refresh(cart_item)
+            return cart_item
+
+
+@app.get("/cart/", response_model=list[schemas.CartOut])
+def get_cart_items(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get all CartItems for the current User.
+    """
+    cart_items = crud.get_cart_items(db, current_user.id)
+    return cart_items
+
+
+@app.post("/subtract-from-the-cart/{item_slug}/", response_model=Union[schemas.CartOut, dict])
+def subtract_from_the_cart(
+    item_slug: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to subtract an Item from the Cart.
+    """
+    item = crud.get_item_by_slug(db, item_slug)
+    if item:
+        cart_item = crud.get_cart_item(db, current_user.id, item.id)
+        if cart_item:
+            if cart_item.quantity > 1:
+                cart_item.quantity -= 1
+                cart_item.price = item.price * cart_item.quantity
+                db.commit()
+                db.refresh(cart_item)
+                return cart_item
+            else:
+                db.delete(cart_item)
+                db.commit()
+                return {"message": "Item removed from the cart."}
+        else:
+            return {"message": "Item already removed from the cart."}

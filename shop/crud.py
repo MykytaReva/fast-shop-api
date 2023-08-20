@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from slugify import slugify
 from sqlalchemy.orm import Session
 
-from .models import Category, Item, Shop, User
+from .models import CartItem, Category, Item, Shop, User
 
 
 # TODO consider to refactor it to classes
@@ -162,3 +162,27 @@ def check_item_owner(db: Session, shop_id: int, item_slug: str):
     if not existing_item:
         raise HTTPException(status_code=403, detail="Forbidden.")
     return existing_item
+
+
+def get_cart_item(db: Session, user_id: int, item_id: int):
+    existing_cart_item = (
+        db.query(CartItem)
+        .join(CartItem.item)
+        .filter(
+            CartItem.user_id == user_id,
+            Item.id == item_id,
+        )
+        .first()
+    )
+    return existing_cart_item
+
+
+def get_cart_items(db: Session, user_id: int):
+    existing_cart_items = (
+        db.query(CartItem)
+        .filter(
+            CartItem.user_id == user_id,
+        )
+        .all()
+    )
+    return existing_cart_items

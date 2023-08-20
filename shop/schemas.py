@@ -285,3 +285,44 @@ class ItemOut(ItemCreate):
     is_available: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+
+class CartBase(BaseModel):
+    """
+    Base Pydantic model for Cart. Includes common fields for create and update operations.
+    """
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "allow"
+
+
+class CartCreate(CartBase):
+    """
+    Pydantic model for creating a new Cart.
+    Inherits from CartBase and includes a field for specifying user_id to associate Cart with User.
+    """
+
+    item_id: int
+    quantity: int
+
+
+class CartPatch(CartBase):
+    """
+    Pydantic model for partially updating an existing Cart.
+    Inherits from CartBase and makes all fields optional.
+    """
+
+    quantity: Optional[int] = None
+
+
+class CartOut(CartBase):
+    """
+    Pydantic model for sending Cart data in API responses.
+    Inherits from CartBase and is used for reading data from the API.
+    """
+
+    item_id: int
+    quantity: int
+    price: float
