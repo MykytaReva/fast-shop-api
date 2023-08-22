@@ -1,7 +1,33 @@
 import pytest
 from faker import Faker
+from fastapi.testclient import TestClient
 
-from tests.test_user_crud import client, create_user, get_headers
+from shop.auth import create_access_token
+from shop.database import TestingSessionLocal
+from shop.main import app
+from shop.models import User
+
+client = TestClient(app)
+
+
+def delete_user(response_json):
+    db = TestingSessionLocal()
+    user_id = response_json.json().get("id")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+        return True
+    return False
+
+
+def create_user(data):
+    return client.post("/signup/", json=data)
+
+
+def get_headers(user_id: int):
+    token = create_access_token(sub=str(user_id))
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
@@ -33,6 +59,31 @@ def random_user_data(fake):
 
 
 @pytest.fixture
+def new_shop(random_user_data):
+    random_user_data["role"] = "SHOP"
+    user = create_user(random_user_data)
+    yield user
+
+
+@pytest.fixture
+def new_user(random_user_data):
+    user = create_user(random_user_data)
+    yield user
+
+
+@pytest.fixture
+def new_shop_with_category(new_shop):
+    data = {
+        "name": "fixture-category",
+    }
+    shop_id = new_shop.json()["id"]
+    response = client.post("/category/", headers=get_headers(shop_id), json=data)
+    assert response.status_code == 200
+    category_slug = response.json()["slug"]  # Extract the category's slug
+    return {"new_shop": new_shop, "category_slug": category_slug}
+
+
+@pytest.fixture
 def random_user_data_shop(fake):
     shop_name = fake.company()
     description = fake.text()
@@ -55,22 +106,3 @@ def random_item_data(fake):
         "description": description,
         "price": price,
     }
-
-
-# @pytest.fixture
-# def new_shop_user_id(random_user_data):
-#     # random_user_data["role"] = "SHOP"
-#     # user = create_user(random_user_data)
-#     # assert user.status_code == 200
-#     # return user.json()["id"]
-#     return 5
-#
-#
-# @pytest.fixture
-# def new_category_id(new_shop_user_id, fake):
-#     category_data = {
-#         "name": f"{fake.company()}-category"
-#     }
-#     response_category = client.post("category/", headers=get_headers(new_shop_user_id), json=category_data)
-#     assert response_category.status_code == 200
-#     return response_category.json()["id"]
