@@ -16,6 +16,7 @@ dependencies:
     - sendgrid=2.2.0
     - python-dotenv=1.0.0
     - fastapi-mail=1.4.1
+    - stripe=2.49.0
     - pip=23
     - pre-commit=3.3
     - git

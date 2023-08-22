@@ -346,7 +346,6 @@ class OrderBase(BaseModel):
     address: str
     country: str
     city: str
-    state: str
     pin_code: str
 
     class Config:

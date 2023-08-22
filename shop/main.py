@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Union
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
@@ -622,3 +623,50 @@ def subtract_from_the_cart(
                 return {"detail": "Item removed from the cart."}
         else:
             return {"detail": "Item already removed from the cart."}
+
+
+@app.get("/order-details/", response_model=list[schemas.CartOut])
+def get_order_details(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    cart_items = crud.get_cart_items(db, current_user.id)
+    return cart_items
+
+
+@app.post("/create-order/", response_model=schemas.OrderOut)
+def post_order_details(
+    order_data: schemas.OrderBase, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    cart_items = crud.get_cart_items(db, current_user.id)
+    total_paid = sum(cart_item.price for cart_item in cart_items)
+
+    new_order = models.Order(
+        first_name=order_data.first_name,
+        last_name=order_data.last_name,
+        user_id=current_user.id,
+        total_paid=total_paid,
+        address=order_data.address,
+        city=order_data.city,
+        country=order_data.country,
+        pin_code=order_data.pin_code,
+        phone_number=order_data.phone_number,
+    )
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)
+
+    for item in cart_items:
+        order_item = models.OrderItem(order_id=new_order.id, item_id=item.id, quantity=item.quantity, price=item.price)
+        db.add(order_item)
+
+    shop_items = defaultdict(list)
+
+    for cart_item in cart_items:
+        shop_items[cart_item.item.shop_id].append(cart_item)
+        db.delete(cart_item)
+
+    for shop_id, cart_items_in_shop in shop_items.items():
+        shop_total_price = sum(cart_item.price for cart_item in cart_items_in_shop)
+        shop_order = models.ShopOrder(shop_id=shop_id, order_id=new_order.id, total_paid=shop_total_price)
+        db.add(shop_order)
+
+    db.commit()
+    return new_order

@@ -185,7 +185,6 @@ class Order(Base):
     total_paid = Column(Float(precision=2))
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    modified_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     user = relationship("User", back_populates="orders")
