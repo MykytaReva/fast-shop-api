@@ -1,4 +1,4 @@
-from test_user_crud import client, create_user, delete_user, get_headers
+from tests.conftest import client, delete_user, get_headers
 
 
 def test_category_create_success(new_shop, fake):
@@ -17,8 +17,8 @@ def test_category_create_success(new_shop, fake):
     delete_user(new_shop)
 
 
-def test_category_name_taken(new_shop_with_category, fake):
-    new_shop = new_shop_with_category["new_shop"]
+def test_category_name_taken(new_shop_with_category_and_item, fake):
+    new_shop = new_shop_with_category_and_item["new_shop"]
     assert new_shop.status_code == 200
     shop_id = new_shop.json()["id"]
     data = {
@@ -49,9 +49,9 @@ def test_category_name_not_provided(new_shop, fake):
     delete_user(new_shop)
 
 
-def test_category_delete_success(new_shop_with_category):
-    new_shop = new_shop_with_category["new_shop"]
-    category_slug = new_shop_with_category["category_slug"]
+def test_category_delete_success(new_shop_with_category_and_item):
+    new_shop = new_shop_with_category_and_item["new_shop"]
+    category_slug = new_shop_with_category_and_item["category_slug"]
     assert new_shop.status_code == 200
 
     shop_id = new_shop.json()["id"]
@@ -62,8 +62,8 @@ def test_category_delete_success(new_shop_with_category):
     delete_user(new_shop)
 
 
-def test_category_delete_404(new_shop_with_category):
-    new_shop = new_shop_with_category["new_shop"]
+def test_category_delete_404(new_shop_with_category_and_item):
+    new_shop = new_shop_with_category_and_item["new_shop"]
     assert new_shop.status_code == 200
 
     user_id = new_shop.json()["id"]
@@ -76,8 +76,8 @@ def test_category_delete_404(new_shop_with_category):
     delete_user(new_shop)
 
 
-def test_category_patch_name_is_taken(new_shop_with_category, fake):
-    new_shop = new_shop_with_category["new_shop"]
+def test_category_patch_name_is_taken(new_shop_with_category_and_item, fake):
+    new_shop = new_shop_with_category_and_item["new_shop"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
     data = {
@@ -96,9 +96,9 @@ def test_category_patch_name_is_taken(new_shop_with_category, fake):
     delete_user(new_shop)
 
 
-def test_category_patch_success(new_shop_with_category, fake):
-    new_shop = new_shop_with_category["new_shop"]
-    category_slug = new_shop_with_category["category_slug"]
+def test_category_patch_success(new_shop_with_category_and_item, fake):
+    new_shop = new_shop_with_category_and_item["new_shop"]
+    category_slug = new_shop_with_category_and_item["category_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -111,8 +111,8 @@ def test_category_patch_success(new_shop_with_category, fake):
     delete_user(new_shop)
 
 
-def test_category_patch_404(new_shop_with_category):
-    new_shop = new_shop_with_category["new_shop"]
+def test_category_patch_404(new_shop_with_category_and_item):
+    new_shop = new_shop_with_category_and_item["new_shop"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -125,9 +125,9 @@ def test_category_patch_404(new_shop_with_category):
     delete_user(new_shop)
 
 
-def test_category_patch_unrecognized_field(new_shop_with_category):
-    new_shop = new_shop_with_category["new_shop"]
-    category_slug = new_shop_with_category["category_slug"]
+def test_category_patch_unrecognized_field(new_shop_with_category_and_item):
+    new_shop = new_shop_with_category_and_item["new_shop"]
+    category_slug = new_shop_with_category_and_item["category_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -154,9 +154,9 @@ def test_category_patch_not_auth():
     assert response.json() == {"detail": "Not authenticated"}
 
 
-def test_category_patch_no_changes_detected(new_shop_with_category):
-    new_shop = new_shop_with_category["new_shop"]
-    category_slug = new_shop_with_category["category_slug"]
+def test_category_patch_no_changes_detected(new_shop_with_category_and_item):
+    new_shop = new_shop_with_category_and_item["new_shop"]
+    category_slug = new_shop_with_category_and_item["category_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 

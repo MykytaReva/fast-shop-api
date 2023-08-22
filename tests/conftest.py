@@ -59,6 +59,29 @@ def random_user_data(fake):
 
 
 @pytest.fixture
+def random_second_user(fake):
+    username = fake.user_name()
+    email = fake.email()
+    first_name = fake.first_name()
+    last_name = fake.last_name()
+    password = fake.password()
+    shop_name = fake.company()
+
+    return {
+        "first_name": first_name,
+        "last_name": last_name,
+        "username": username,
+        "email": email,
+        "role": "CUSTOMER",
+        "shop_name": shop_name,
+        "is_staff": False,
+        "is_active": False,
+        "is_superuser": False,
+        "password": password,
+    }
+
+
+@pytest.fixture
 def new_shop(random_user_data):
     random_user_data["role"] = "SHOP"
     user = create_user(random_user_data)
@@ -72,15 +95,34 @@ def new_user(random_user_data):
 
 
 @pytest.fixture
-def new_shop_with_category(new_shop):
-    data = {
+def new_shop_with_category_and_item(new_shop):
+    data_category = {
         "name": "fixture-category",
     }
     shop_id = new_shop.json()["id"]
-    response = client.post("/category/", headers=get_headers(shop_id), json=data)
-    assert response.status_code == 200
-    category_slug = response.json()["slug"]  # Extract the category's slug
-    return {"new_shop": new_shop, "category_slug": category_slug}
+    response_category = client.post("/category/", headers=get_headers(shop_id), json=data_category)
+    assert response_category.status_code == 200
+    category_slug = response_category.json()["slug"]
+    category_id = response_category.json()["id"]
+    data_item = {
+        "name": "fixture-item",
+        "image": "https://picsum.photos/200/300",
+        "title": "fixture-title",
+        "description": "fixture-description",
+        "price": 100,
+        "category_id": category_id,
+    }
+    response_item = client.post("/item/", headers=get_headers(shop_id), json=data_item)
+    assert response_item.status_code == 200
+    item_id = response_item.json()["id"]
+    item_slug = response_item.json()["slug"]
+    return {
+        "new_shop": new_shop,
+        "category_id": category_id,
+        "category_slug": category_slug,
+        "item_id": item_id,
+        "item_slug": item_slug,
+    }
 
 
 @pytest.fixture
