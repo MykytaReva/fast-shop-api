@@ -6,6 +6,7 @@ from shop.auth import create_access_token
 from shop.database import TestingSessionLocal
 from shop.main import app
 from shop.models import User
+from tests.factories import ShopFactory
 
 client = TestClient(app)
 
@@ -81,11 +82,11 @@ def random_second_user(fake):
     }
 
 
-@pytest.fixture
-def new_shop(random_user_data):
-    random_user_data["role"] = "SHOP"
-    user = create_user(random_user_data)
-    yield user
+# @pytest.fixture
+# def new_shop(random_user_data):
+#     random_user_data["role"] = "SHOP"
+#     user = create_user(random_user_data)
+#     yield user
 
 
 @pytest.fixture

@@ -1,9 +1,14 @@
+import pytest
+
 from tests.conftest import client, create_user, delete_user, get_headers
+from tests.factories import ShopFactory
 
 
-def test_create_item_success(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    category_id = new_shop_with_category_and_item["category_id"]
+def test_create_item_success(fake):
+    user_data_dict = ShopFactory.create()
+
+    new_shop = user_data_dict["new_shop"]
+    category_id = user_data_dict["category_id"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
     data = {
@@ -19,9 +24,10 @@ def test_create_item_success(new_shop_with_category_and_item, fake):
     delete_user(new_shop)
 
 
-def test_create_item_name_is_taken(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    category_id = new_shop_with_category_and_item["category_id"]
+def test_create_item_name_is_taken(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    category_id = user_data_dict["category_id"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -39,8 +45,9 @@ def test_create_item_name_is_taken(new_shop_with_category_and_item, fake):
     delete_user(new_shop)
 
 
-def test_create_item_not_all_fields_provided(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
+def test_create_item_not_all_fields_provided(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -53,9 +60,10 @@ def test_create_item_not_all_fields_provided(new_shop_with_category_and_item, fa
     delete_user(new_shop)
 
 
-def test_create_item_unrecognized_field(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    category_id = new_shop_with_category_and_item["category_id"]
+def test_create_item_unrecognized_field(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    category_id = user_data_dict["category_id"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -74,7 +82,9 @@ def test_create_item_unrecognized_field(new_shop_with_category_and_item, fake):
     delete_user(new_shop)
 
 
-def test_create_item_not_shop_role(new_user, fake):
+def test_create_item_not_shop_role(fake):
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     item_data = {
@@ -87,9 +97,10 @@ def test_create_item_not_shop_role(new_user, fake):
     delete_user(new_user)
 
 
-def test_patch_item_success(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
+def test_patch_item_success(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    item_slug = user_data_dict["item_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -101,10 +112,11 @@ def test_patch_item_success(new_shop_with_category_and_item, fake):
     delete_user(new_shop)
 
 
-def test_patch_item_name_is_taken(new_shop_with_category_and_item, random_item_data):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
-    category_id = new_shop_with_category_and_item["category_id"]
+def test_patch_item_name_is_taken(random_item_data):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    item_slug = user_data_dict["item_slug"]
+    category_id = user_data_dict["category_id"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
     random_item_data["category_id"] = category_id
@@ -117,9 +129,10 @@ def test_patch_item_name_is_taken(new_shop_with_category_and_item, random_item_d
     delete_user(new_shop)
 
 
-def test_patch_item_no_changes_detected(new_shop_with_category_and_item):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
+def test_patch_item_no_changes_detected():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    item_slug = user_data_dict["item_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -129,9 +142,10 @@ def test_patch_item_no_changes_detected(new_shop_with_category_and_item):
     delete_user(new_shop)
 
 
-def test_patch_item_unrecognized_field(new_shop_with_category_and_item):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
+def test_patch_item_unrecognized_field():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    item_slug = user_data_dict["item_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -141,9 +155,10 @@ def test_patch_item_unrecognized_field(new_shop_with_category_and_item):
     delete_user(new_shop)
 
 
-def test_delete_item_success(new_shop_with_category_and_item):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
+def test_delete_item_success():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    item_slug = user_data_dict["item_slug"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -152,8 +167,9 @@ def test_delete_item_success(new_shop_with_category_and_item):
     delete_user(new_shop)
 
 
-def test_delete_item_not_found(new_shop_with_category_and_item, fake):
-    new_shop = new_shop_with_category_and_item["new_shop"]
+def test_delete_item_not_found(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
     assert new_shop.status_code == 200
     user_id = new_shop.json()["id"]
 
@@ -163,7 +179,9 @@ def test_delete_item_not_found(new_shop_with_category_and_item, fake):
     delete_user(new_shop)
 
 
-def test_delete_item_not_shop_role(new_user, fake):
+def test_delete_item_not_shop_role(fake):
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
 
     user_id = new_user.json()["id"]
@@ -173,14 +191,14 @@ def test_delete_item_not_shop_role(new_user, fake):
     delete_user(new_user)
 
 
-def test_delete_item_not_shop_owner(new_shop_with_category_and_item, random_second_user):
-    new_shop_1 = new_shop_with_category_and_item["new_shop"]
-    item_slug_1 = new_shop_with_category_and_item["item_slug"]
+def test_delete_item_not_shop_owner():
+    user_data_dict_1 = ShopFactory.create()
+    new_shop_1 = user_data_dict_1["new_shop"]
+    item_slug_1 = user_data_dict_1["item_slug"]
     assert new_shop_1.status_code == 200
 
-    random_second_user["role"] = "SHOP"
-    new_shop_2 = create_user(random_second_user)
-
+    user_data_dict_2 = ShopFactory.create()
+    new_shop_2 = user_data_dict_2["new_shop"]
     assert new_shop_2.status_code == 200
     user_id_2 = new_shop_2.json()["id"]
 
@@ -191,17 +209,21 @@ def test_delete_item_not_shop_owner(new_shop_with_category_and_item, random_seco
     delete_user(new_shop_2)
 
 
-def test_get_item_success(new_shop_with_category_and_item, random_second_user):
-    new_shop = new_shop_with_category_and_item["new_shop"]
-    item_slug = new_shop_with_category_and_item["item_slug"]
-    assert new_shop.status_code == 200
+def test_get_item_success():
+    user_data_dict_1 = ShopFactory.create()
+    new_shop_1 = user_data_dict_1["new_shop"]
+    item_slug_1 = user_data_dict_1["item_slug"]
+    assert new_shop_1.status_code == 200
 
-    new_user = create_user(random_second_user)
-    assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
-    response = client.get(f"/item/{item_slug}", headers=get_headers(user_id))
+    user_data_dict_2 = ShopFactory.create()
+    new_shop_2 = user_data_dict_2["new_shop"]
+    assert new_shop_2.status_code == 200
+    user_id_2 = new_shop_2.json()["id"]
+
+    response = client.get(f"/item/{item_slug_1}", headers=get_headers(user_id_2))
     assert response.status_code == 200
-    delete_user(new_user)
+    delete_user(new_shop_2)
+    delete_user(new_shop_1)
 
 
 def test_get_item_404():
