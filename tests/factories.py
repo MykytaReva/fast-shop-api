@@ -41,17 +41,21 @@ class ShopFactory(factory.Factory):
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
-    email = factory.Faker("email")
+    base_email = factory.Faker("email")
     is_staff = False
     is_active = False
     is_superuser = False
     password = factory.Faker("password")
     shop_name_base = factory.Faker("company")  # Base name for shop_name
-    shop_name_counter = itertools.count(1)  # Counter for appending numbers
+    counter = itertools.count(1)  # Counter for appending numbers
 
     @factory.lazy_attribute
     def shop_name(self):
-        return f"{self.shop_name_base}{next(self.shop_name_counter)}"
+        return f"{self.shop_name_base}{next(self.counter)}"
+
+    @factory.lazy_attribute
+    def email(self):
+        return f"{next(self.counter)}{self.base_email}"
 
     @classmethod
     def _create(cls, model_class, role="SHOP", *args, **kwargs):
