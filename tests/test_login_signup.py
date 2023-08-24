@@ -114,7 +114,7 @@ def test_email_verification_invalid_token():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
-    token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=constants.ALGORITHM)
     response = client.get(f"/verification/?token={token}")
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid token."}
@@ -162,7 +162,7 @@ def test_reset_password_invalid_token():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
-    token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=constants.ALGORITHM)
     data = {"new_password": "qwertyqwerty"}
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
     assert response.status_code == 401
