@@ -9,7 +9,7 @@ from . import crud, models, schemas
 from .auth import authenticate, create_access_token, verify_token
 from .crud import check_free_category_name
 from .database import SessionLocal, engine
-from .smtp_email import send_activation_email, send_reset_password_email
+from .smtp_emails import send_activation_email, send_reset_password_email
 from .utils import get_current_shop, get_current_user, get_db
 
 app = FastAPI()

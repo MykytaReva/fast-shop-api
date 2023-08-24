@@ -8,7 +8,7 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm.session import Session
 
-from . import settings
+from . import constants
 from .models import User
 
 JWTPayloadMapping = MutableMapping[str, Union[datetime, bool, str, List[str], List[int]]]
@@ -34,7 +34,7 @@ def authenticate(*, email: str, password: str, db: Session) -> Optional[User]:
 def create_access_token(*, sub: str) -> str:  # 2
     return _create_token(
         token_type="access_token",
-        lifetime=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),  # 3
+        lifetime=timedelta(minutes=constants.ACCESS_TOKEN_EXPIRE_MINUTES),  # 3
         sub=sub,
     )
 
@@ -47,13 +47,13 @@ def _create_token(token_type: str, lifetime: timedelta, sub: str) -> str:
     payload["iat"] = datetime.utcnow()
     payload["sub"] = str(sub)
 
-    return jwt.encode(payload, settings.JWT_SECRET, settings.ALGORITHM)
+    return jwt.encode(payload, constants.JWT_SECRET, constants.ALGORITHM)
 
 
 def verify_token(token: str, db: Session):
 
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, constants.JWT_SECRET, algorithms=[constants.ALGORITHM])
         user = db.query(User).filter(User.id == payload.get("sub")).first()
         if user:
             return user

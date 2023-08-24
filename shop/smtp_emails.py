@@ -6,7 +6,7 @@ from jose import jwt
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-from shop import settings
+from shop import constants
 from shop.database import SessionLocal
 from shop.models import User
 
@@ -28,7 +28,7 @@ def send_activation_email(user_id: int, db: SessionLocal):
         subject = "Welcome to our shop!"
         expiration_time = datetime.utcnow() + timedelta(minutes=5)
         token = jwt.encode(
-            {"sub": str(user_id), "exp": expiration_time}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+            {"sub": str(user_id), "exp": expiration_time}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
         )
         html_content = (
             "You have successfully registered to our shop."
@@ -61,7 +61,7 @@ def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
         subject = "Reset Your Password"
         expiration_time = datetime.utcnow() + timedelta(hours=12)
         reset_token = jwt.encode(
-            {"sub": str(user_id), "exp": expiration_time}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+            {"sub": str(user_id), "exp": expiration_time}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
         )
         html_content = (
             f"Click <a href='http://127.0.0.1:8000/reset-password/verify/?token={reset_token}'>here</a>"

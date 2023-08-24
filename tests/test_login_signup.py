@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from conftest import client, create_user, delete_user
 from jose import jwt
 
-from shop import settings
+from shop import constants
 from tests.factories import ShopFactory
 
 
@@ -103,7 +103,7 @@ def test_email_verification_success():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
-    token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(user_id)}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
     response = client.get(f"/verification/?token={token}")
     assert response.status_code == 200
     delete_user(new_user)
@@ -129,14 +129,14 @@ def test_email_verification_expired_token():
     # Generate token with a future expiration time for the first verification
     future_expiration = datetime.utcnow() + timedelta(hours=1)
     token = jwt.encode(
-        {"sub": str(user_id), "exp": future_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        {"sub": str(user_id), "exp": future_expiration}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
     )
     response = client.get(f"/verification/?token={token}")
     assert response.status_code == 200
     # Generate token with a past expiration time for the second verification
     past_expiration = datetime.utcnow() - timedelta(hours=1)
     exp_token = jwt.encode(
-        {"sub": str(user_id), "exp": past_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        {"sub": str(user_id), "exp": past_expiration}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
     )
     response = client.get(f"/verification/?token={exp_token}")
     assert response.status_code == 401
@@ -149,7 +149,7 @@ def test_reset_password_success():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
-    token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(user_id)}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
     data = {"new_password": "qwertyqwerty"}
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
     assert response.status_code == 200
@@ -171,7 +171,7 @@ def test_reset_password_invalid_token():
 
 
 def test_reset_password_user_not_found():
-    token = jwt.encode({"sub": str(9999)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(9999)}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
     data = {"new_password": "qwertyqwerty"}
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
     assert response.status_code == 404
@@ -186,7 +186,7 @@ def test_reset_password_expired_token():
     # Generate token with a future expiration time for the first verification
     future_expiration = datetime.utcnow() + timedelta(hours=1)
     token = jwt.encode(
-        {"sub": str(user_id), "exp": future_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        {"sub": str(user_id), "exp": future_expiration}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
     )
     data = {"new_password": "qwertyqwerty"}
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
@@ -194,7 +194,7 @@ def test_reset_password_expired_token():
     # Generate token with a past expiration time for the second verification
     past_expiration = datetime.utcnow() - timedelta(hours=1)
     exp_token = jwt.encode(
-        {"sub": str(user_id), "exp": past_expiration}, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        {"sub": str(user_id), "exp": past_expiration}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
     )
     response = client.post(f"/reset-password/verify/?token={exp_token}", json=data)
     assert response.status_code == 401

@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
-from . import settings
+from . import constants
 from .auth import oauth2_scheme
 from .database import SessionLocal, TestingSessionLocal
 from .models import Shop, User
@@ -36,8 +36,8 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     try:
         payload = jwt.decode(
             token,
-            settings.JWT_SECRET,
-            algorithms=[settings.ALGORITHM],
+            constants.JWT_SECRET,
+            algorithms=[constants.ALGORITHM],
             options={"verify_aud": False},
         )
         username: str = payload.get("sub")
