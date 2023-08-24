@@ -5,12 +5,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from . import crud, models, schemas
+from . import models, schemas, utils
 from .auth import authenticate, create_access_token, verify_token
-from .crud import check_free_category_name
 from .database import SessionLocal, engine
 from .smtp_emails import send_activation_email, send_reset_password_email
-from .utils import get_current_shop, get_current_user, get_db
+from .utils import check_free_category_name, get_current_shop, get_current_user, get_db
 
 app = FastAPI()
 
@@ -83,14 +82,14 @@ async def signup(user_data: schemas.UserCreate, background_tasks: BackgroundTask
     # tests fields provided
     allowed_fields = set(schemas.UserCreate.model_fields.keys())
     user_data_dict = user_data.model_dump()
-    crud.check_model_fields(user_data_dict, allowed_fields)
+    utils.check_model_fields(user_data_dict, allowed_fields)
 
     # tests if user exists and handle unique constraints error
-    crud.check_user_email_or_username(db, email=user_data.email, username=user_data.username)
+    utils.check_user_email_or_username(db, email=user_data.email, username=user_data.username)
     if user_data.role == schemas.UserRoleEnum.SHOP:
         if not user_data.shop_name:
             raise HTTPException(status_code=400, detail="Shop name is required.")
-        crud.check_free_shop_name(db, shop_name=user_data.shop_name)
+        utils.check_free_shop_name(db, shop_name=user_data.shop_name)
 
     # Create a new User object using UserCreate schema
     new_user = models.User(
@@ -104,7 +103,7 @@ async def signup(user_data: schemas.UserCreate, background_tasks: BackgroundTask
     new_user.set_password(user_data.password)
     new_user.profile = models.UserProfile()
     if new_user.role == schemas.UserRoleEnum.SHOP:
-        slug = crud.generate_unique_shop_slug(db, user_data.shop_name)
+        slug = utils.generate_unique_shop_slug(db, user_data.shop_name)
         new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name, slug=slug)
         # new_user.shop = models.Shop(user_id=new_user.id, shop_name=user_data.shop_name)
 
@@ -152,7 +151,7 @@ def read_user(user_id: int, db: SessionLocal = Depends(get_db)):
 
 @app.delete("/user/")
 def delete_user(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    crud.delete_user_by_id(db, current_user.id)
+    utils.delete_user_by_id(db, current_user.id)
     return {"message": "User deleted successfully."}
 
 
@@ -170,7 +169,7 @@ def update_user_details(
     # tests fields provided
     allowed_fields = set(schemas.UserCompletePatch.model_fields.keys())
     user_data_dict = user_data.model_dump()
-    crud.check_model_fields(user_data_dict, allowed_fields)
+    utils.check_model_fields(user_data_dict, allowed_fields)
 
     # separate fields for models
     allowed_fields_user = set(schemas.UserPatch.model_fields.keys())
@@ -193,7 +192,7 @@ def update_user_details(
                     continue
                 if value != current_value:
                     if key == "username":
-                        crud.check_free_username(db, value)
+                        utils.check_free_username(db, value)
                     setattr(current_user, key, value)
                     changed += 1
         elif key in allowed_fields_profile:
@@ -225,7 +224,7 @@ def get_shop(shop_slug: str, db: Session = Depends(get_db)):
     Raises:
     - HTTPException 404: If the Shop with the given slug does not exist.
     """
-    shop = crud.get_shop_by_slug(db, shop_slug)
+    shop = utils.get_shop_by_slug(db, shop_slug)
     return shop
 
 
@@ -235,7 +234,7 @@ def update_shop_details(
 ):
     allowed_fields = set(schemas.ShopPatch.model_fields.keys())
     shop_data_dict = shop_data.model_dump()
-    crud.check_model_fields(shop_data_dict, allowed_fields)
+    utils.check_model_fields(shop_data_dict, allowed_fields)
 
     changed = 0
     for key, value in shop_data_dict.items():
@@ -243,8 +242,8 @@ def update_shop_details(
         if value is not None:
             if value != current_value:
                 if key == "shop_name":
-                    crud.check_free_shop_name(db, value)
-                    new_slug = crud.generate_unique_shop_slug(db, value)
+                    utils.check_free_shop_name(db, value)
+                    new_slug = utils.generate_unique_shop_slug(db, value)
                     current_shop.slug = new_slug
                 setattr(current_shop, key, value)
                 changed += 1
@@ -279,10 +278,10 @@ def create_category(
     allowed_fields = set(schemas.CategoryCreate.model_fields.keys())
     category_data_dict = category_data.model_dump()
 
-    crud.check_model_fields(category_data_dict, allowed_fields)
+    utils.check_model_fields(category_data_dict, allowed_fields)
     check_free_category_name(db, current_shop.id, category_data.name)
 
-    category_data.slug = crud.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
+    category_data.slug = utils.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
 
     new_category = models.Category(
         shop_id=current_shop.id,
@@ -314,7 +313,7 @@ def delete_category(
     Raises:
     - HTTPException 404: If the Category with the given slug does not exist.
     """
-    category = crud.get_category_by_slug(db, current_shop.id, category_slug)
+    category = utils.get_category_by_slug(db, current_shop.id, category_slug)
     db.delete(category)
     db.commit()
     return category
@@ -343,9 +342,9 @@ def update_category(
     """
     allowed_fields = set(schemas.CategoryPatch.model_fields.keys())
     category_data_dict = category_data.model_dump()
-    crud.check_model_fields(category_data_dict, allowed_fields)
+    utils.check_model_fields(category_data_dict, allowed_fields)
 
-    category = crud.get_category_by_slug(db, current_shop.id, category_slug)
+    category = utils.get_category_by_slug(db, current_shop.id, category_slug)
 
     changed = 0
     for key, value in category_data_dict.items():
@@ -387,10 +386,10 @@ def create_item(
     allowed_fields = set(schemas.ItemCreate.model_fields.keys())
     item_data_dict = item_data.model_dump()
 
-    crud.check_model_fields(item_data_dict, allowed_fields)
-    crud.check_free_item_name(db, current_shop.id, item_data.name)
+    utils.check_model_fields(item_data_dict, allowed_fields)
+    utils.check_free_item_name(db, current_shop.id, item_data.name)
 
-    item_data.slug = crud.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
+    item_data.slug = utils.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
 
     new_item = models.Item(
         shop_id=current_shop.id,
@@ -432,17 +431,17 @@ def update_item(
     """
     allowed_fields = set(schemas.ItemPatch.model_fields.keys())
     item_data_dict = item_data.model_dump()
-    crud.check_model_fields(item_data_dict, allowed_fields)
+    utils.check_model_fields(item_data_dict, allowed_fields)
 
-    item = crud.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
-    crud.check_item_owner(db, current_shop.id, item_slug)
+    item = utils.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
+    utils.check_item_owner(db, current_shop.id, item_slug)
     changed = 0
     for key, value in item_data_dict.items():
         current_value = getattr(item, key)
         if value is not None:
             if value != current_value:
                 if key == "name":
-                    crud.check_free_item_name(db, current_shop.id, value)
+                    utils.check_free_item_name(db, current_shop.id, value)
                 setattr(item, key, value)
                 changed += 1
     if not changed:
@@ -472,8 +471,8 @@ def delete_item(
     Raises:
     - HTTPException 404: If the Item with the given slug does not exist.
     """
-    item = crud.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
-    # crud.check_item_owner(db, current_shop.id, item_slug)
+    item = utils.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
+    # utils.check_item_owner(db, current_shop.id, item_slug)
     db.delete(item)
     db.commit()
     return item
@@ -496,7 +495,7 @@ def get_item(
     Raises:
     - HTTPException 404: If the Item with the given slug does not exist.
     """
-    item = crud.get_item_by_slug(db, item_slug)
+    item = utils.get_item_by_slug(db, item_slug)
     return item
 
 
@@ -529,7 +528,7 @@ async def request_password_reset(email: str, background_tasks: BackgroundTasks, 
     """
     Endpoint to request email for password reset.
     """
-    user = crud.get_user_by_email(db, email=email)
+    user = utils.get_user_by_email(db, email=email)
     if user:
         background_tasks.add_task(send_reset_password_email, user_id=user.id, email=email, db=db)
         return {"message": f"Link to reset password has been sent to {email}"}
@@ -569,9 +568,9 @@ def add_to_the_cart(
     """
     Endpoint to add an Item to the Cart.
     """
-    item = crud.get_item_by_slug(db, item_slug)
+    item = utils.get_item_by_slug(db, item_slug)
     if item:
-        cart_item = crud.get_cart_item(db, current_user.id, item.id)
+        cart_item = utils.get_cart_item(db, current_user.id, item.id)
         if cart_item:
             cart_item.quantity += 1
             cart_item.price = item.price * cart_item.quantity
@@ -594,7 +593,7 @@ def get_cart_items(
     """
     Endpoint to get all CartItems for the current User.
     """
-    cart_items = crud.get_cart_items(db, current_user.id)
+    cart_items = utils.get_cart_items(db, current_user.id)
     return cart_items
 
 
@@ -607,9 +606,9 @@ def subtract_from_the_cart(
     """
     Endpoint to subtract an Item from the Cart.
     """
-    item = crud.get_item_by_slug(db, item_slug)
+    item = utils.get_item_by_slug(db, item_slug)
     if item:
-        cart_item = crud.get_cart_item(db, current_user.id, item.id)
+        cart_item = utils.get_cart_item(db, current_user.id, item.id)
         if cart_item:
             if cart_item.quantity > 1:
                 cart_item.quantity -= 1
