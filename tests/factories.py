@@ -1,7 +1,7 @@
+import itertools
 from unittest.mock import patch
 
 import factory
-import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
 
@@ -41,19 +41,22 @@ class ShopFactory(factory.Factory):
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
-    username = factory.Faker("user_name")
     email = factory.Faker("email")
-    # role = "SHOP"
-    shop_name = factory.Faker("company")
     is_staff = False
     is_active = False
     is_superuser = False
     password = factory.Faker("password")
+    shop_name_base = factory.Faker("company")  # Base name for shop_name
+    shop_name_counter = itertools.count(1)  # Counter for appending numbers
+
+    @factory.lazy_attribute
+    def shop_name(self):
+        return f"{self.shop_name_base}{next(self.shop_name_counter)}"
 
     @classmethod
     def _create(cls, model_class, role="SHOP", *args, **kwargs):
         user_data = {
-            "username": kwargs["username"],
+            "username": kwargs["email"],
             "email": kwargs["email"],
             "password": kwargs["password"],
             "role": role,
@@ -66,6 +69,8 @@ class ShopFactory(factory.Factory):
         }
 
         new_shop = create_user(user_data)
+        if new_shop.status_code != 200:
+            raise ValueError(new_shop.json())
         assert new_shop.status_code == 200
         if role == "SHOP":
             category_data = {"name": "fixture-category"}

@@ -1,83 +1,84 @@
-from conftest import client, create_user, delete_user, get_headers
+from conftest import client, delete_user, get_headers
 from fastapi import HTTPException
 
 from shop.database import TestingSessionLocal
 from shop.models import Shop
+from tests.factories import ShopFactory
 
 
-def get_shop_slug_by_shop_id(shop_id: int):
+def get_shop_by_shop_id(shop_id: int):
     db = TestingSessionLocal()
     shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found.")
-    return shop.slug
+    return shop
 
 
-def test_patch_shop_success(random_user_data, fake):
-    random_user_data["role"] = "SHOP"
-    new_user = create_user(random_user_data)
-    assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
+def test_patch_shop_success(fake):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    assert new_shop.status_code == 200
+    shop_id = new_shop.json()["id"]
     data = {"shop_name": fake.company(), "description": "PATCHED_DESCRIPTION"}
-    response = client.patch(f"shop/", headers=get_headers(user_id), json=data)
+    response = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
     assert response.status_code == 200
-    delete_user(new_user)
+    delete_user(new_shop)
 
 
-def test_patch_shop_not_changed(random_user_data, random_user_data_shop, fake):
-    random_user_data["role"] = "SHOP"
-    description = random_user_data_shop["description"]
-    new_user = create_user(random_user_data)
-    assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
+def test_patch_shop_not_changed():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    assert new_shop.status_code == 200
+    shop_id = new_shop.json()["id"]
     db = TestingSessionLocal()
-    shop = db.query(Shop).filter(Shop.user_id == user_id).first()
+    shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
     data = {
         "description": shop.description,
     }
-    response = client.patch(f"shop/", headers=get_headers(user_id), json=data)
+    response = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
     assert response.status_code == 422
     assert response.json() == {"detail": "Model was not changed."}
-    delete_user(new_user)
+    delete_user(new_shop)
 
 
-def test_patch_shop_name_taken(random_user_data, fake):
-    random_user_data["role"] = "SHOP"
-    new_user_1 = create_user(random_user_data)
-    random_user_data_2 = random_user_data.copy()
-    random_user_data_2["email"] = fake.email()
-    random_user_data_2["username"] = fake.user_name()
-    random_user_data_2["shop_name"] = fake.company()
-    new_user_2 = create_user(random_user_data_2)
-    assert new_user_1.status_code == 200
-    assert new_user_2.status_code == 200
-    user_id = new_user_2.json()["id"]
+def test_patch_shop_name_taken():
+    user_data_dict_1 = ShopFactory.create()
+    new_shop_1 = user_data_dict_1["new_shop"]
+    assert new_shop_1.status_code == 200
+    shop_id_1 = new_shop_1.json()["id"]
+
+    user_data_dict_2 = ShopFactory.create()
+    new_shop_2 = user_data_dict_2["new_shop"]
+    assert new_shop_1.status_code == 200
+    shop_id_2 = new_shop_2.json()["id"]
+
+    shop_name = get_shop_by_shop_id(shop_id_1).shop_name
     data = {
-        "shop_name": random_user_data["shop_name"],
+        "shop_name": shop_name,
         "description": "PATCHED_DESCRIPTION",
     }
-    response = client.patch(f"shop/", headers=get_headers(user_id), json=data)
+    response = client.patch(f"shop/", headers=get_headers(shop_id_2), json=data)
     assert response.status_code == 409
     assert response.json() == {"detail": "Shop name is already taken."}
-    delete_user(new_user_1)
-    delete_user(new_user_2)
+    delete_user(new_shop_1)
+    delete_user(new_shop_2)
 
 
-def test_patch_shop_non_existing_field(random_user_data, random_user_data_shop, fake):
-    random_user_data["role"] = "SHOP"
-    new_user = create_user(random_user_data)
-    assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
+def test_patch_shop_non_existing_field():
+    user_data_dict_1 = ShopFactory.create()
+    new_shop = user_data_dict_1["new_shop"]
+    assert new_shop.status_code == 200
+    shop_id = new_shop.json()["id"]
     data = {
         "qwerty": "qwerty",
     }
-    response = client.patch(f"shop/", headers=get_headers(user_id), json=data)
+    response = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
     assert response.status_code == 422
     assert response.json() == {"detail": "Unrecognized field: qwerty"}
-    delete_user(new_user)
+    delete_user(new_shop)
 
 
-def test_patch_shop_not_auth(random_user_data):
+def test_patch_shop_not_auth():
     data = {
         "shop_name": "TEST_SHOP_NAME",
         "description": "TEST_DESCRIPTION",
@@ -87,23 +88,15 @@ def test_patch_shop_not_auth(random_user_data):
     assert response.json() == {"detail": "Not authenticated"}
 
 
-def test_get_shop_details(random_user_data, random_user_data_shop, fake):
-    random_user_data["role"] = "SHOP"
-    new_user = create_user(random_user_data)
-    assert new_user.status_code == 200
-    shop_id = new_user.json()["id"]
-    data = {
-        "shop_name": random_user_data_shop["shop_name"],
-        "description": random_user_data_shop["description"],
-    }
-    response_patch = client.patch("shop/", headers=get_headers(shop_id), json=data)
-    assert response_patch.status_code == 200
-    shop_slug = get_shop_slug_by_shop_id(shop_id)
+def test_get_shop_details():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    assert new_shop.status_code == 200
+    shop_id = new_shop.json()["id"]
+    shop_slug = get_shop_by_shop_id(shop_id).slug
     response = client.get(f"shop/{shop_slug}/")
     assert response.status_code == 200
-    assert response.json()["shop_name"] == random_user_data_shop["shop_name"]
-    assert response.json()["description"] == random_user_data_shop["description"]
-    delete_user(new_user)
+    delete_user(new_shop)
 
 
 def test_get_shop_404(random_user_data, random_user_data_shop, fake):

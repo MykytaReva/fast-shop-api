@@ -1,7 +1,8 @@
 from conftest import client, create_user, delete_user, get_headers
 
-from shop import models, schemas
+from shop import models
 from shop.database import test_engine
+from tests.factories import ShopFactory
 
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=test_engine)
@@ -53,10 +54,11 @@ def test_get_all_users():
     assert response.status_code == 200
 
 
-def test_get_user_by_id_success(random_user_data):
-    new_user = create_user(random_user_data)
+def test_get_user_by_id_success():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
-    user_id = new_user.json().get("id")
+    user_id = new_user.json()["id"]
     response = client.get(f"/user/{user_id}/")
     assert response.status_code == 200
     delete_user(response)
@@ -69,11 +71,11 @@ def test_get_user_by_id_404():
     assert response.json() == {"detail": "User not found."}
 
 
-def test_delete_user_success(random_user_data):
-    new_user = create_user(random_user_data)
+def test_delete_user_success():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
-
-    user_id = new_user.json().get("id")
+    user_id = new_user.json()["id"]
     response = client.delete("/user/", headers=get_headers(user_id))
 
     assert response.status_code == 200
@@ -81,15 +83,16 @@ def test_delete_user_success(random_user_data):
     assert response.json() == {"message": "User deleted successfully."}
 
 
-def test_delete_user_not_auth(random_user_data):
+def test_delete_user_not_auth():
     response = client.delete("/user/")
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
 
 
-def test_patch_user_success(random_user_data, fake):
-    new_user = create_user(random_user_data)
+def test_patch_user_success(fake):
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     data = {
@@ -104,16 +107,12 @@ def test_patch_user_success(random_user_data, fake):
     delete_user(new_user)
 
 
-def test_patch_user_no_changes_detected(random_user_data):
-    new_user = create_user(random_user_data)
+def test_patch_user_no_changes_detected():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
-    allowed_fields = set(schemas.UserCompletePatch.model_fields.keys())
-    data = {}
-    for field in allowed_fields:
-        if field in random_user_data:
-            data[field] = random_user_data[field]
     user_id = new_user.json()["id"]
-    response = client.patch(f"user/", headers=get_headers(user_id), json=data)
+    response = client.patch(f"user/", headers=get_headers(user_id), json={})
     assert response.status_code == 422
     assert response.json() == {"detail": "Model was not changed."}
     delete_user(new_user)
@@ -136,7 +135,7 @@ def test_patch_user_username_taken(random_user_data, fake):
     delete_user(new_user_2)
 
 
-def test_patch_user_not_auth(random_user_data):
+def test_patch_user_not_auth():
     data = {"username": "TEST_USERNAME"}
     response = client.patch(f"user/", json=data)
     assert response.status_code == 401

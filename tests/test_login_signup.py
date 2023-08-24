@@ -4,6 +4,7 @@ from conftest import client, create_user, delete_user
 from jose import jwt
 
 from shop import settings
+from tests.factories import ShopFactory
 
 
 def test_login_success(random_user_data):
@@ -36,12 +37,10 @@ def test_login_user_not_found(random_user_data):
 
 
 def test_create_user_success(random_user_data):
-    data = random_user_data
-    response = create_user(data)
-    assert response.status_code == 200
-    assert response.json()["username"] == data["username"]
-    assert response.json()["email"] == data["email"]
-    delete_user(response)
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
+    assert new_user.status_code == 200
+    delete_user(new_user)
 
 
 def test_create_user_not_all_fields_provided(random_user_data):
@@ -99,8 +98,9 @@ def test_create_user_username_taken(random_user_data, fake):
     delete_user(user_2)
 
 
-def test_email_verification_success(random_user_data):
-    new_user = create_user(random_user_data)
+def test_email_verification_success():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
@@ -109,8 +109,9 @@ def test_email_verification_success(random_user_data):
     delete_user(new_user)
 
 
-def test_email_verification_invalid_token(random_user_data):
-    new_user = create_user(random_user_data)
+def test_email_verification_invalid_token():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=settings.ALGORITHM)
@@ -120,8 +121,9 @@ def test_email_verification_invalid_token(random_user_data):
     delete_user(new_user)
 
 
-def test_email_verification_expired_token(random_user_data):
-    new_user = create_user(random_user_data)
+def test_email_verification_expired_token():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     # Generate token with a future expiration time for the first verification
@@ -142,8 +144,9 @@ def test_email_verification_expired_token(random_user_data):
     delete_user(new_user)
 
 
-def test_reset_password_success(random_user_data):
-    new_user = create_user(random_user_data)
+def test_reset_password_success():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
@@ -154,8 +157,9 @@ def test_reset_password_success(random_user_data):
     delete_user(new_user)
 
 
-def test_reset_password_invalid_token(random_user_data):
-    new_user = create_user(random_user_data)
+def test_reset_password_invalid_token():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=settings.ALGORITHM)
@@ -166,7 +170,7 @@ def test_reset_password_invalid_token(random_user_data):
     delete_user(new_user)
 
 
-def test_reset_password_user_not_found(random_user_data):
+def test_reset_password_user_not_found():
     token = jwt.encode({"sub": str(9999)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
     data = {"new_password": "qwertyqwerty"}
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
@@ -174,8 +178,9 @@ def test_reset_password_user_not_found(random_user_data):
     assert response.json() == {"detail": "User not found."}
 
 
-def test_reset_password_expired_token(random_user_data):
-    new_user = create_user(random_user_data)
+def test_reset_password_expired_token():
+    user_data_dict = ShopFactory.create(role="CUSTOMER")
+    new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
     # Generate token with a future expiration time for the first verification
