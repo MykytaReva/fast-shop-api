@@ -41,16 +41,8 @@ def send_activation_email(user_id: int, db: SessionLocal):
         )
 
         # Send the email
-        if os.environ.get("ENVIRONMENT") == "test":
-            print('You cannot send emails in "test" environment.')
-            return {"message": "Email sent successfully."}
-        else:
-            response = sg.send(message)
-            # response = await sg.send(message)
-            if response.status_code == 202:
-                return {"message": "Email sent successfully."}
-            else:
-                return {"message": "Failed to send email."}
+        print('Email sent in "development" environment.')
+        sg.send(message)
     except Exception as e:
         print("An error occurred:", str(e))
 

@@ -1,34 +1,10 @@
-from fastapi.testclient import TestClient
+from conftest import client, create_user, delete_user
 
 from shop import models, schemas
-from shop.auth import create_access_token
-from shop.database import TestingSessionLocal, test_engine
-from shop.main import app
-from shop.models import User
+from shop.database import test_engine
 
-client = TestClient(app)
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=test_engine)
-
-
-def create_user(data):
-    return client.post("/signup/", json=data)
-
-
-def delete_user(response_json):
-    db = TestingSessionLocal()
-    user_id = response_json.json().get("id")
-    user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        db.delete(user)
-        db.commit()
-        return True
-    return False
-
-
-def get_headers(user_id: int):
-    token = create_access_token(sub=str(user_id))
-    return {"Authorization": f"Bearer {token}"}
 
 
 def test_read_users_me_authenticated_user_success(random_user_data):

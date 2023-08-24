@@ -1,4 +1,4 @@
-from test_user_crud import client, create_user, delete_user, get_headers
+from conftest import client, create_user, delete_user, get_headers
 
 
 def test_cart_add_success(random_user_data, fake):

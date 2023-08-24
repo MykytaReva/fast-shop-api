@@ -1,5 +1,5 @@
+from conftest import client, create_user, delete_user, get_headers
 from fastapi import HTTPException
-from test_user_crud import client, create_user, delete_user, get_headers
 
 from shop.database import TestingSessionLocal
 from shop.models import Shop
@@ -96,7 +96,7 @@ def test_get_shop_details(random_user_data, random_user_data_shop, fake):
         "shop_name": random_user_data_shop["shop_name"],
         "description": random_user_data_shop["description"],
     }
-    response_patch = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
+    response_patch = client.patch("shop/", headers=get_headers(shop_id), json=data)
     assert response_patch.status_code == 200
     shop_slug = get_shop_slug_by_shop_id(shop_id)
     response = client.get(f"shop/{shop_slug}/")

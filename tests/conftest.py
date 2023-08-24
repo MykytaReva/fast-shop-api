@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
@@ -23,7 +25,9 @@ def delete_user(response_json):
 
 
 def create_user(data):
-    return client.post("/signup/", json=data)
+    with patch("shop.main.BackgroundTasks.add_task"):
+        response = client.post("/signup/", json=data)
+    return response
 
 
 def get_headers(user_id: int):

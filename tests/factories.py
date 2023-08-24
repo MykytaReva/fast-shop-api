@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import factory
 import pytest
 from faker import Faker
@@ -23,7 +25,9 @@ def delete_user_id(user_id):
 
 
 def create_user(data):
-    return client.post("/signup/", json=data)
+    with patch("shop.main.BackgroundTasks.add_task"):
+        response = client.post("/signup/", json=data)
+    return response
 
 
 def get_headers(user_id: int):

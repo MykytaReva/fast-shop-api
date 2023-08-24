@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
+from conftest import client, create_user, delete_user
 from jose import jwt
-from test_user_crud import client, create_user, delete_user
 
 from shop import settings
 
@@ -167,12 +167,8 @@ def test_reset_password_invalid_token(random_user_data):
 
 
 def test_reset_password_user_not_found(random_user_data):
-    new_user = create_user(random_user_data)
-    assert new_user.status_code == 200
-    user_id = new_user.json()["id"]
-    token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
+    token = jwt.encode({"sub": str(9999)}, settings.JWT_SECRET, algorithm=settings.ALGORITHM)
     data = {"new_password": "qwertyqwerty"}
-    delete_user(new_user)
     response = client.post(f"/reset-password/verify/?token={token}", json=data)
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
