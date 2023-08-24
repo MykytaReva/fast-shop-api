@@ -1,4 +1,4 @@
-from conftest import client, create_user, delete_user
+from conftest import client, create_user, delete_user, get_headers
 
 from shop import models, schemas
 from shop.database import test_engine
