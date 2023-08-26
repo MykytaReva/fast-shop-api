@@ -43,7 +43,6 @@ class UserProfileBase(BaseModel):
     address: Optional[str] = None
     country: Optional[str] = None
     city: Optional[str] = None
-    state: Optional[str] = None
     pin_code: Optional[str] = None
 
     class Config:
@@ -161,7 +160,6 @@ class UserProfileOut(UserOut, UserProfileBase):
     address: Optional[str] = None
     country: Optional[str] = None
     city: Optional[str] = None
-    state: Optional[str] = None
     pin_code: Optional[str] = None
 
 

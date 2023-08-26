@@ -1,6 +1,8 @@
+import os
 from collections import defaultdict
 from typing import Union
 
+import stripe
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -13,6 +15,8 @@ from .smtp_emails import send_activation_email, send_reset_password_email
 from .utils import check_free_category_name, get_current_shop, get_current_user, get_db
 
 app = FastAPI()
+
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=engine)
@@ -627,7 +631,7 @@ def subtract_from_the_cart(
 
 @app.get("/order-details/", response_model=list[schemas.CartOut])
 def get_order_details(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    cart_items = crud.get_cart_items(db, current_user.id)
+    cart_items = utils.get_cart_items(db, current_user.id)
     return cart_items
 
 
@@ -635,8 +639,22 @@ def get_order_details(current_user: models.User = Depends(get_current_user), db:
 def post_order_details(
     order_data: schemas.OrderBase, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    cart_items = crud.get_cart_items(db, current_user.id)
+    cart_items = utils.get_cart_items(db, current_user.id)
     total_paid = sum(cart_item.price for cart_item in cart_items)
+
+    try:
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(total_paid) * 100, currency="usd", metadata={"user_id": current_user.id}
+        )
+    except stripe.error.StripeError as e:
+        # Handle payment error
+        error_message = str(e)
+        return {"error_message": error_message}
+
+    except stripe.error.CardError as e:
+        # Display error message to the user
+        err = e.error
+        return {"error": err["message"]}
 
     new_order = models.Order(
         first_name=order_data.first_name,
@@ -648,6 +666,7 @@ def post_order_details(
         country=order_data.country,
         pin_code=order_data.pin_code,
         phone_number=order_data.phone_number,
+        order_key=payment_intent.id,
     )
     db.add(new_order)
     db.commit()
@@ -670,3 +689,32 @@ def post_order_details(
 
     db.commit()
     return new_order
+
+
+@app.post("/stripe-webhook/")
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    payload = await request.json()
+    event = None
+
+    try:
+        event = stripe.Event.construct_from(payload, stripe.api_key)
+    except ValueError as e:
+        # Invalid payload
+        return {"error": str(e)}
+
+    # Handle specific event types
+    if event.type == "payment_intent.succeeded":
+        payment_intent = event.data.object
+        payment_intent_id = payment_intent.id
+
+        user_id = payment_intent.metadata.user_id
+        if user_id is None:
+            return {"error": "User ID not found"}
+
+        order = (
+            db.query(models.Order).filter(models.Order.user_id == user_id, models.Order.billing_status == False).first()
+        )
+        order.billing_status = True
+        db.commit()
+
+    return {"status": "success"}
