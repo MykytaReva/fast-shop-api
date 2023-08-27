@@ -180,8 +180,8 @@ class Order(Base):
     country = Column(String(16), nullable=True)
     city = Column(String(16), nullable=True)
     pin_code = Column(String(15), nullable=True)
-
-    billing_status = Column(Boolean, default=False)
+    # TODO change default to False
+    billing_status = Column(Boolean, default=True)
     order_key = Column(String(200))
     total_paid = Column(Float(precision=2))
 
@@ -215,8 +215,8 @@ class ShopOrder(Base):
     shop_id = Column(Integer, ForeignKey("shop.id"))
     order_id = Column(Integer, ForeignKey("order.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
-
-    billing_status = Column(Boolean, default=False)
+    # TODO change default to False
+    billing_status = Column(Boolean, default=True)
     total_paid = Column(Float(precision=2))
     status = Column(Enum(ShopOrderStatusEnum), default=ShopOrderStatusEnum.NEW)
 
