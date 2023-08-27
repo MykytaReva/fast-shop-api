@@ -1,17 +1,6 @@
-from conftest import client, delete_user, get_headers
-from fastapi import HTTPException
+from conftest import client, delete_user, get_headers, get_shop_by_shop_id
 
-from shop.database import TestingSessionLocal
-from shop.models import Shop
 from tests.factories import ShopFactory
-
-
-def get_shop_by_shop_id(shop_id: int):
-    db = TestingSessionLocal()
-    shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
-    if not shop:
-        raise HTTPException(status_code=404, detail="Shop not found.")
-    return shop
 
 
 def test_patch_shop_success(fake):
@@ -30,8 +19,7 @@ def test_patch_shop_not_changed():
     new_shop = user_data_dict["new_shop"]
     assert new_shop.status_code == 200
     shop_id = new_shop.json()["id"]
-    db = TestingSessionLocal()
-    shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
+    shop = get_shop_by_shop_id(shop_id)
     data = {
         "description": shop.description,
     }

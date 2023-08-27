@@ -666,7 +666,7 @@ def post_order_details(
         country=order_data.country,
         pin_code=order_data.pin_code,
         phone_number=order_data.phone_number,
-        order_key=payment_intent.id,
+        order_key=payment_intent.get("id"),
     )
     db.add(new_order)
     db.commit()
@@ -721,19 +721,19 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 
-@app.get("/orders/{order_key}", response_model=schemas.OrderOut)
-def get_order(order_key: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    order = utils.get_order_by_order_key(db, order_key, current_user.id)
+@app.get("/orders/{order_id}", response_model=schemas.OrderOut)
+def get_order(order_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    order = utils.get_order_by_order_id(db, order_id, current_user.id)
     return order
 
 
-@app.get("/orders/", response_model=Union[list[schemas.OrderOut], dict])
+@app.get("/orders/", response_model=list[schemas.OrderOut])
 def get_orders(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     orders = utils.get_orders(db, current_user.id)
     return orders
 
 
-@app.get("/shop-orders/", response_model=Union[list[schemas.ShopOrderOut], dict])
+@app.get("/shop-orders/", response_model=list[schemas.ShopOrderOut])
 def get_shop_orders(
     current_shop: models.Shop = Depends(get_current_shop),
     db: Session = Depends(get_db),

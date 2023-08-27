@@ -1,4 +1,4 @@
-from conftest import client, get_headers
+from conftest import client, delete_user, get_headers
 
 from tests.factories import ShopFactory
 
@@ -12,6 +12,7 @@ def test_cart_add_success():
 
     response = client.post(f"/add-to-the-cart/{item_slug}/", headers=get_headers(shop_id))
     assert response.status_code == 200
+    delete_user(new_shop)
 
 
 def test_cart_add_item_not_found(fake):
@@ -22,6 +23,7 @@ def test_cart_add_item_not_found(fake):
     response = client.post(f"/add-to-the-cart/{fake.slug()}/", headers=get_headers(shop_id))
     assert response.status_code == 404
     assert response.json() == {"detail": "Item not found."}
+    delete_user(new_shop)
 
 
 def test_cart_subtract_success(random_user_data, fake):
@@ -35,6 +37,7 @@ def test_cart_subtract_success(random_user_data, fake):
     assert response_add.status_code == 200
     response = client.post(f"/subtract-from-the-cart/{item_slug}/", headers=get_headers(shop_id))
     assert response.status_code == 200
+    delete_user(new_shop)
 
 
 def test_cart_subtract_removed():
@@ -47,9 +50,12 @@ def test_cart_subtract_removed():
     response_add = client.post(f"/add-to-the-cart/{item_slug}/", headers=get_headers(shop_id), json=data)
     assert response_add.status_code == 200
     response_1 = client.post(f"/subtract-from-the-cart/{item_slug}/", headers=get_headers(shop_id))
-    assert response_1.json() == {"detail": "Item removed from the cart."}
+    assert response_1.status_code == 200
     response_2 = client.post(f"/subtract-from-the-cart/{item_slug}/", headers=get_headers(shop_id))
-    assert response_2.json() == {"detail": "Item already removed from the cart."}
+    assert response_2.json() == {"detail": "Item removed from the cart."}
+    response_3 = client.post(f"/subtract-from-the-cart/{item_slug}/", headers=get_headers(shop_id))
+    assert response_3.json() == {"detail": "Item already removed from the cart."}
+    delete_user(new_shop)
 
 
 def test_cart_get_all_items():
@@ -63,3 +69,4 @@ def test_cart_get_all_items():
 
     response_cart = client.get(f"/cart/", headers=get_headers(shop_id))
     assert response_cart.status_code == 200
+    delete_user(new_shop)

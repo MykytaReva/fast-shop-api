@@ -2,15 +2,38 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from shop.auth import create_access_token
 from shop.database import TestingSessionLocal
 from shop.main import app
-from shop.models import User
-from tests.factories import ShopFactory
+from shop.models import Shop, ShopOrder, User
 
 client = TestClient(app)
+
+
+def create_order(data, shop_id: int):
+    mock_payment_intent = {"id": "mocked_payment_intent_id"}
+    with patch("shop.main.stripe.PaymentIntent.create", return_value=mock_payment_intent):
+        response = client.post(f"/create-order/", headers=get_headers(shop_id), json=data)
+    return response
+
+
+def get_shop_order_by_order_id(shop_id: int, order_id: int):
+    db = TestingSessionLocal()
+    shop_order = db.query(ShopOrder).filter(ShopOrder.shop_id == shop_id, ShopOrder.order_id == order_id).first()
+    if not shop_order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return shop_order
+
+
+def get_shop_by_shop_id(shop_id: int):
+    db = TestingSessionLocal()
+    shop = db.query(Shop).filter(Shop.user_id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found.")
+    return shop
 
 
 def delete_user(response_json):
@@ -152,4 +175,17 @@ def random_item_data(fake):
         "title": title,
         "description": description,
         "price": price,
+    }
+
+
+@pytest.fixture
+def order_data():
+    return {
+        "first_name": "string",
+        "last_name": "string",
+        "phone_number": "string",
+        "address": "string",
+        "country": "string",
+        "city": "string",
+        "pin_code": "string",
     }

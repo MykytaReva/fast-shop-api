@@ -240,23 +240,23 @@ def get_cart_items(db: Session, user_id: int):
         .all()
     )
     if not existing_cart_items:
-        return {"message": "Your cart is empty."}
+        raise HTTPException(status_code=409, detail="Cart is empty.")
     return existing_cart_items
 
 
 def get_orders(db: Session, user_id: int):
     existing_orders = db.query(Order).filter(Order.user_id == user_id, Order.billing_status == True).all()
     if not existing_orders:
-        return {"message": "You have no orders yet."}
+        raise HTTPException(status_code=409, detail="You have no orders yet.")
     return existing_orders
 
 
-def get_order_by_order_key(db: Session, order_key: str, user_id: int):
+def get_order_by_order_id(db: Session, order_id: int, user_id: int):
     existing_order = (
         db.query(Order)
         .filter(
             Order.user_id == user_id,
-            Order.order_key == order_key,
+            Order.id == order_id,
         )
         .first()
     )
@@ -268,7 +268,7 @@ def get_order_by_order_key(db: Session, order_key: str, user_id: int):
 def get_shop_orders(db: Session, shop_id: int):
     existing_orders = db.query(ShopOrder).filter(ShopOrder.shop_id == shop_id, ShopOrder.billing_status == True).all()
     if not existing_orders:
-        return {"message": "You have no orders yet."}
+        raise HTTPException(status_code=409, detail="You have no orders yet.")
     return existing_orders
 
 

@@ -357,6 +357,7 @@ class OrderOut(OrderBase):
     Pydantic model for sending Order data in API responses.
     """
 
+    id: int
     billing_status: bool
     total_paid: float
     created_at: datetime

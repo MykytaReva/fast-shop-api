@@ -95,12 +95,14 @@ class ShopFactory(factory.Factory):
             assert response_item.status_code == 200
             item_slug = response_item.json()["slug"]
             item_id = response_item.json()["id"]
+            cart_response = client.post(f"/add-to-the-cart/{item_slug}/", headers=get_headers(new_shop.json()["id"]))
             return {
                 "new_shop": new_shop,
                 "category_id": category_id,
                 "category_slug": category_slug,
                 "item_id": item_id,
                 "item_slug": item_slug,
+                "cart_response": cart_response,
             }
         else:
             return {"new_user": new_shop}
