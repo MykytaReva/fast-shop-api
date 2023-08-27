@@ -35,6 +35,7 @@ class User(Base):
     shop = relationship("Shop", uselist=False, back_populates="user", cascade="all, delete-orphan")
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+    shop_orders = relationship("ShopOrder", back_populates="user")
 
     # Property to access the hashed password
     @property
@@ -213,10 +214,13 @@ class ShopOrder(Base):
     id = Column(Integer, primary_key=True, index=True)
     shop_id = Column(Integer, ForeignKey("shop.id"))
     order_id = Column(Integer, ForeignKey("order.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
 
+    billing_status = Column(Boolean, default=False)
     total_paid = Column(Float(precision=2))
     status = Column(Enum(ShopOrderStatusEnum), default=ShopOrderStatusEnum.NEW)
 
     # Relationships
     shop = relationship("Shop", back_populates="shop_orders")
     order = relationship("Order", back_populates="shop_orders")
+    user = relationship("User", back_populates="shop_orders")

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from . import constants
 from .auth import oauth2_scheme
 from .database import SessionLocal, TestingSessionLocal
-from .models import CartItem, Category, Item, Shop, User
+from .models import CartItem, Category, Item, Order, Shop, ShopOrder, User
 from .schemas import TokenData
 
 
@@ -239,4 +239,49 @@ def get_cart_items(db: Session, user_id: int):
         )
         .all()
     )
+    if not existing_cart_items:
+        return {"message": "Your cart is empty."}
     return existing_cart_items
+
+
+def get_orders(db: Session, user_id: int):
+    existing_orders = db.query(Order).filter(Order.user_id == user_id, Order.billing_status == True).all()
+    if not existing_orders:
+        return {"message": "You have no orders yet."}
+    return existing_orders
+
+
+def get_order_by_order_key(db: Session, order_key: str, user_id: int):
+    existing_order = (
+        db.query(Order)
+        .filter(
+            Order.user_id == user_id,
+            Order.order_key == order_key,
+        )
+        .first()
+    )
+    if not existing_order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return existing_order
+
+
+def get_shop_orders(db: Session, shop_id: int):
+    existing_orders = db.query(ShopOrder).filter(ShopOrder.shop_id == shop_id, ShopOrder.billing_status == True).all()
+    if not existing_orders:
+        return {"message": "You have no orders yet."}
+    return existing_orders
+
+
+def get_shop_order_by_order_id(db: Session, order_id: int, shop_id: int):
+    existing_order = (
+        db.query(ShopOrder)
+        .filter(
+            ShopOrder.shop_id == shop_id,
+            ShopOrder.id == order_id,
+            ShopOrder.billing_status == True,
+        )
+        .first()
+    )
+    if not existing_order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return existing_order

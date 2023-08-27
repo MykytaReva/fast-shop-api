@@ -396,6 +396,7 @@ class ShopOrderBase(BaseModel):
     Inherits from ShopOrderBase and includes a field for specifying order_id to associate ShopOrder with Order.
     """
 
+    user_id: int
     order_id: int
     shop_id: int
     status: ShopOrderStatusEnum
@@ -406,14 +407,26 @@ class ShopOrderBase(BaseModel):
         extra = "allow"
 
 
+class ShopOrderPatch(BaseModel):
+    """
+    Pydantic model for partially updating an existing ShopOrder.
+    Inherits from ShopOrderBase and makes all fields optional.
+    """
+
+    status: ShopOrderStatusEnum
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "forbid"
+
+
 class ShopOrderOut(ShopOrderBase):
     """
     Pydantic model for sending ShopOrder data in API responses.
     Inherits from ShopOrderBase and is used for reading data from the API.
     """
 
-    price: float
     status: ShopOrderStatusEnum
-    total_paid: float
-    created_at: datetime
-    modified_at: Optional[datetime] = None
+    total_paid: int
+    billing_status: bool

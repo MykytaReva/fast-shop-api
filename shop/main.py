@@ -590,7 +590,7 @@ def add_to_the_cart(
             return cart_item
 
 
-@app.get("/cart/", response_model=list[schemas.CartOut])
+@app.get("/cart/", response_model=Union[list[schemas.CartOut], dict])
 def get_cart_items(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -684,7 +684,9 @@ def post_order_details(
 
     for shop_id, cart_items_in_shop in shop_items.items():
         shop_total_price = sum(cart_item.price for cart_item in cart_items_in_shop)
-        shop_order = models.ShopOrder(shop_id=shop_id, order_id=new_order.id, total_paid=shop_total_price)
+        shop_order = models.ShopOrder(
+            shop_id=shop_id, order_id=new_order.id, total_paid=shop_total_price, user_id=current_user.id
+        )
         db.add(shop_order)
 
     db.commit()
@@ -705,16 +707,89 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # Handle specific event types
     if event.type == "payment_intent.succeeded":
         payment_intent = event.data.object
-        payment_intent_id = payment_intent.id
-
+        order_key = payment_intent.id
         user_id = payment_intent.metadata.user_id
+
         if user_id is None:
             return {"error": "User ID not found"}
-
-        order = (
-            db.query(models.Order).filter(models.Order.user_id == user_id, models.Order.billing_status == False).first()
-        )
+        order = utils.get_order_by_order_key(db, order_key, user_id)
+        shop_order = db.query(models.ShopOrder).filter(models.ShopOrder.order_id == order.id).first()
         order.billing_status = True
+        shop_order.billing_status = True
         db.commit()
 
     return {"status": "success"}
+
+
+@app.get("/orders/{order_key}", response_model=schemas.OrderOut)
+def get_order(order_key: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    order = utils.get_order_by_order_key(db, order_key, current_user.id)
+    return order
+
+
+@app.get("/orders/", response_model=Union[list[schemas.OrderOut], dict])
+def get_orders(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    orders = utils.get_orders(db, current_user.id)
+    return orders
+
+
+@app.get("/shop-orders/", response_model=Union[list[schemas.ShopOrderOut], dict])
+def get_shop_orders(
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    orders = utils.get_shop_orders(db, current_shop.id)
+    return orders
+
+
+@app.get("/shop-orders/{order_id}", response_model=schemas.ShopOrderOut)
+def get_shop_order(
+    order_id: int,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    order = utils.get_shop_order_by_order_id(db, order_id, current_shop.id)
+    return order
+
+
+@app.patch("/shop-orders/{order_id}/", response_model=schemas.ShopOrderOut)
+def update_shop_order_status(
+    order_id: int,
+    order_data: schemas.ShopOrderPatch,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to update a ShopOrder in the database.
+
+    Parameters:
+    - order_data (schemas.ShopOrderPatch): ShopOrder data received from the request body.
+    - order_id (int): The id of the ShopOrder to be updated.
+
+    Returns:
+    - schemas.ShopOrder: The updated ShopOrder as a Pydantic model.
+
+    Raises:
+    - HTTPException 400: If the request data is invalid.
+    - HTTPException 404: If the ShopOrder with the given id does not exist.
+    """
+    allowed_fields = set(schemas.ShopOrderPatch.model_fields.keys())
+    order_data_dict = order_data.model_dump()
+    utils.check_model_fields(order_data_dict, allowed_fields)
+
+    order = utils.get_shop_order_by_order_id(db, order_id, current_shop.id)
+
+    changed = 0
+    for key, value in order_data_dict.items():
+        current_value = getattr(order, key)
+        if value is not None:
+            if value != current_value:
+                setattr(order, key, value)
+                changed = 1
+    if not changed:
+        raise HTTPException(status_code=422, detail="Model was not changed.")
+
+    db.commit()
+    db.refresh(order)
+
+    return order
