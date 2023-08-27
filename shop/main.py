@@ -84,10 +84,6 @@ async def signup(user_data: schemas.UserCreate, background_tasks: BackgroundTask
     - HTTPException 400: If the request data is invalid.
     - HTTPException 409: If the email or username already exists in the database.
     """
-    # tests fields provided
-    allowed_fields = set(schemas.UserCreate.model_fields.keys())
-    user_data_dict = user_data.model_dump()
-    utils.check_model_fields(user_data_dict, allowed_fields)
 
     # tests if user exists and handle unique constraints error
     utils.check_user_email_or_username(db, email=user_data.email, username=user_data.username)
@@ -172,15 +168,11 @@ def update_user_details(
     Allows partial updates by providing only the fields that need to be changed in the request payload.
     """
     # tests fields provided
-    allowed_fields = set(schemas.UserCompletePatch.model_fields.keys())
     user_data_dict = user_data.model_dump()
-    utils.check_model_fields(user_data_dict, allowed_fields)
 
     # separate fields for models
     allowed_fields_user = set(schemas.UserPatch.model_fields.keys())
     allowed_fields_profile = set(schemas.UserProfilePatch.model_fields.keys())
-
-    # get user and profile
 
     profile = current_user.profile
 
@@ -237,9 +229,7 @@ def get_shop(shop_slug: str, db: Session = Depends(get_db)):
 def update_shop_details(
     shop_data: schemas.ShopPatch, current_shop: models.Shop = Depends(get_current_shop), db: Session = Depends(get_db)
 ):
-    allowed_fields = set(schemas.ShopPatch.model_fields.keys())
     shop_data_dict = shop_data.model_dump()
-    utils.check_model_fields(shop_data_dict, allowed_fields)
 
     changed = 0
     for key, value in shop_data_dict.items():
@@ -280,18 +270,14 @@ def create_category(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 409: If the slug already exists in the database.
     """
-    allowed_fields = set(schemas.CategoryCreate.model_fields.keys())
-    category_data_dict = category_data.model_dump()
-
-    utils.check_model_fields(category_data_dict, allowed_fields)
     check_free_category_name(db, current_shop.id, category_data.name)
 
-    category_data.slug = utils.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
+    slug = utils.generate_unique_category_slug(db, current_shop.shop_name, category_data.name)
 
     new_category = models.Category(
         shop_id=current_shop.id,
         name=category_data.name,
-        slug=category_data.slug,
+        slug=slug,
     )
     db.add(new_category)
     db.commit()
@@ -345,9 +331,7 @@ def update_category(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 404: If the Category with the given slug does not exist.
     """
-    allowed_fields = set(schemas.CategoryPatch.model_fields.keys())
     category_data_dict = category_data.model_dump()
-    utils.check_model_fields(category_data_dict, allowed_fields)
 
     category = utils.get_category_by_slug(db, current_shop.id, category_slug)
 
@@ -388,19 +372,16 @@ def create_item(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 409: If the slug already exists in the database.
     """
-    allowed_fields = set(schemas.ItemCreate.model_fields.keys())
-    item_data_dict = item_data.model_dump()
-
-    utils.check_model_fields(item_data_dict, allowed_fields)
+    # allowed_fields = set(schemas.ItemCreate.model_fields.keys())
     utils.check_free_item_name(db, current_shop.id, item_data.name)
 
-    item_data.slug = utils.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
+    slug = utils.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
 
     new_item = models.Item(
         shop_id=current_shop.id,
         category_id=item_data.category_id,
         name=item_data.name,
-        slug=item_data.slug,
+        slug=slug,
         image=item_data.image,
         title=item_data.title,
         description=item_data.description,
@@ -434,9 +415,7 @@ def update_item(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 404: If the Item with the given slug does not exist.
     """
-    allowed_fields = set(schemas.ItemPatch.model_fields.keys())
     item_data_dict = item_data.model_dump()
-    utils.check_model_fields(item_data_dict, allowed_fields)
 
     item = utils.get_item_by_slug_for_shop(db, current_shop.id, item_slug)
     utils.check_item_owner(db, current_shop.id, item_slug)
@@ -773,9 +752,7 @@ def update_shop_order_status(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 404: If the ShopOrder with the given id does not exist.
     """
-    allowed_fields = set(schemas.ShopOrderPatch.model_fields.keys())
     order_data_dict = order_data.model_dump()
-    utils.check_model_fields(order_data_dict, allowed_fields)
 
     order = utils.get_shop_order_by_order_id(db, order_id, current_shop.id)
 

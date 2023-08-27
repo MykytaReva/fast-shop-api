@@ -55,7 +55,7 @@ def test_create_user_non_existing_field(random_user_data):
     data = random_user_data
     response = create_user(data)
     assert response.status_code == 422
-    assert response.json() == {"detail": "Unrecognized field: qwerty"}
+    assert response.json()["detail"][0]["msg"] == "Extra inputs are not permitted"
     delete_user(response)
 
 

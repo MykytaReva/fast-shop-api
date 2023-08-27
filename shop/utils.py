@@ -123,13 +123,6 @@ def check_free_shop_name(db: Session, shop_name: str):
     return existing_shop
 
 
-def check_model_fields(user_data_dict, allowed_fields):
-    allowed_fields.add("additionalProp1")
-    for key, value in user_data_dict.items():
-        if key not in allowed_fields:
-            raise HTTPException(status_code=422, detail=f"Unrecognized field: {key}")
-
-
 def generate_unique_category_slug(db: Session, shop_name: str, category_name: str):
     unique_slug = f"{slugify(shop_name)}-{slugify(category_name)}"
     counter = 1

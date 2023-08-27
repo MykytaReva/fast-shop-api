@@ -62,7 +62,7 @@ def test_patch_shop_non_existing_field():
     }
     response = client.patch(f"shop/", headers=get_headers(shop_id), json=data)
     assert response.status_code == 422
-    assert response.json() == {"detail": "Unrecognized field: qwerty"}
+    assert response.json()["detail"][0]["msg"] == "Extra inputs are not permitted"
     delete_user(new_shop)
 
 

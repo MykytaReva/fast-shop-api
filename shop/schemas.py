@@ -29,7 +29,7 @@ class UserBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class UserProfileBase(BaseModel):
@@ -48,7 +48,7 @@ class UserProfileBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class UserCreate(UserBase):
@@ -182,10 +182,9 @@ class ShopPatch(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
-# TODO add all shop's categories field
 class ShopOut(ShopPatch):
     """
     Pydantic model for sending shop data in API responses.
@@ -210,7 +209,7 @@ class CategoryBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class CategoryCreate(CategoryBase):
@@ -259,7 +258,7 @@ class ItemCreate(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class ItemPatch(ItemCreate):
@@ -299,7 +298,7 @@ class CartBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class CartCreate(CartBase):
@@ -349,7 +348,7 @@ class OrderBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class OrderOut(OrderBase):
@@ -376,7 +375,7 @@ class OrderItemCreate(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class OrderItemOut(OrderItemCreate):
@@ -405,7 +404,7 @@ class ShopOrderBase(BaseModel):
     class Config:
         from_attributes = True
         validate_assignment = True
-        extra = "allow"
+        extra = "forbid"
 
 
 class ShopOrderPatch(BaseModel):

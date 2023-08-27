@@ -78,7 +78,7 @@ def test_create_item_unrecognized_field(fake):
     }
     response = client.post(f"/item/", headers=get_headers(user_id), json=data)
     assert response.status_code == 422
-    assert response.json() == {"detail": "Unrecognized field: qwerty"}
+    assert response.json()["detail"][0]["msg"] == "Extra inputs are not permitted"
     delete_user(new_shop)
 
 
@@ -151,7 +151,7 @@ def test_patch_item_unrecognized_field():
 
     response = client.patch(f"/item/{item_slug}", headers=get_headers(user_id), json={"qwerty": "qwerty"})
     assert response.status_code == 422
-    assert response.json() == {"detail": "Unrecognized field: qwerty"}
+    assert response.json()["detail"][0]["msg"] == "Extra inputs are not permitted"
     delete_user(new_shop)
 
 

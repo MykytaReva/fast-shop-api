@@ -135,7 +135,7 @@ def test_category_patch_unrecognized_field():
         f"category/{category_slug}/", headers=get_headers(shop_id), json={"qwerty": "patched_category_name"}
     )
     assert response_patch.status_code == 422
-    assert response_patch.json() == {"detail": "Unrecognized field: qwerty"}
+    assert response_patch.json()["detail"][0]["msg"] == "Extra inputs are not permitted"
     delete_user(new_shop)
 
 
