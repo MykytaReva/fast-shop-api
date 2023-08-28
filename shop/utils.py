@@ -46,16 +46,26 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == token_data.username).first()
-    if user is None:
+    user = db.query(User).filter(
+        User.id == token_data.username,
+    )
+
+    if user.first():
+        active_user = user.filter(User.is_active == True).first()
+        if active_user:
+            return active_user
+        raise HTTPException(status_code=401, detail="Please activate your account.")
+    else:
         raise credentials_exception
-    return user
 
 
 def get_current_shop(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> Shop:
     if current_user.role == "SHOP":
-        shop = db.query(Shop).filter(Shop.user_id == current_user.id).first()
-        return shop
+        shop = db.query(Shop).filter(Shop.user_id == current_user.id, Shop.is_approved == True).first()
+        if shop:
+            return shop
+        else:
+            raise HTTPException(status_code=403, detail="Your shop is not approved.")
     else:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
