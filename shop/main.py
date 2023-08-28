@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Union
 
 import stripe
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -770,3 +770,72 @@ def update_shop_order_status(
     db.refresh(order)
 
     return order
+
+
+# @app.get("/items/", response_model=list[schemas.ItemOut])
+@app.get("/items/")
+def get_all_items_with_filtering(
+    shop_slug: str = Query(None, description="Filter items by shop slug"),
+    category_name: str = Query(None, description="Filter items by category name"),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get all items with filtering by shop's name and category's name
+    """
+    all_items = (
+        db.query(models.Item)
+        .filter(
+            models.Item.is_approved == True,
+            models.Item.is_available == True,
+        )
+        .all()
+    )
+    if shop_slug:
+        shop_exists = db.query(models.Shop).filter(models.Shop.slug == shop_slug).first()
+        if shop_exists:
+            items_by_shop = (
+                db.query(models.Item)
+                .join(models.Item.shop)
+                .filter(
+                    models.Shop.slug == shop_slug,
+                    models.Item.is_approved == True,
+                    models.Item.is_available == True,
+                )
+            )
+            if category_name:
+                category_exists = (
+                    db.query(models.Category)
+                    .join(models.Category.shop)
+                    .filter(
+                        models.Shop.slug == shop_slug,
+                        models.Category.name == category_name,
+                    )
+                    .first()
+                )
+                if category_exists:
+                    items_by_shop_category = (
+                        items_by_shop.join(models.Item.category).filter(models.Category.name == category_name).all()
+                    )
+
+                    if items_by_shop_category:
+                        return items_by_shop_category
+
+            return items_by_shop.all()
+        else:
+            return all_items
+
+    if category_name:
+        items_by_category = (
+            db.query(models.Item)
+            .join(models.Item.category)
+            .filter(
+                models.Category.name == category_name,
+                models.Item.is_approved == True,
+                models.Item.is_available == True,
+            )
+            .all()
+        )
+        if items_by_category:
+            return items_by_category
+
+    return all_items
