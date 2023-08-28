@@ -775,8 +775,8 @@ def update_shop_order_status(
 # @app.get("/items/", response_model=list[schemas.ItemOut])
 @app.get("/items/")
 def get_all_items_with_filtering(
-    shop_slug: str = Query(None, description="Filter items by shop slug"),
-    category_name: str = Query(None, description="Filter items by category name"),
+    shop: str = Query(None, description="Filter items by shop slug"),
+    category: str = Query(None, description="Filter items by category name"),
     db: Session = Depends(get_db),
 ):
     """
@@ -790,31 +790,31 @@ def get_all_items_with_filtering(
         )
         .all()
     )
-    if shop_slug:
-        shop_exists = db.query(models.Shop).filter(models.Shop.slug == shop_slug).first()
+    if shop:
+        shop_exists = db.query(models.Shop).filter(models.Shop.slug == shop).first()
         if shop_exists:
             items_by_shop = (
                 db.query(models.Item)
                 .join(models.Item.shop)
                 .filter(
-                    models.Shop.slug == shop_slug,
+                    models.Shop.slug == shop,
                     models.Item.is_approved == True,
                     models.Item.is_available == True,
                 )
             )
-            if category_name:
+            if category:
                 category_exists = (
                     db.query(models.Category)
                     .join(models.Category.shop)
                     .filter(
-                        models.Shop.slug == shop_slug,
-                        models.Category.name == category_name,
+                        models.Shop.slug == shop,
+                        models.Category.name == category,
                     )
                     .first()
                 )
                 if category_exists:
                     items_by_shop_category = (
-                        items_by_shop.join(models.Item.category).filter(models.Category.name == category_name).all()
+                        items_by_shop.join(models.Item.category).filter(models.Category.name == category).all()
                     )
 
                     if items_by_shop_category:
@@ -824,12 +824,12 @@ def get_all_items_with_filtering(
         else:
             return all_items
 
-    if category_name:
+    if category:
         items_by_category = (
             db.query(models.Item)
             .join(models.Item.category)
             .filter(
-                models.Category.name == category_name,
+                models.Category.name == category,
                 models.Item.is_approved == True,
                 models.Item.is_available == True,
             )

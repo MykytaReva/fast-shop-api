@@ -82,7 +82,7 @@ class ShopFactory(factory.Factory):
             assert response_category.status_code == 200
             category_id = response_category.json()["id"]
             category_slug = response_category.json()["slug"]
-
+            category_name = response_category.json()["name"]
             item_data = {
                 "name": "fixture-item",
                 "description": "fixture-description",
@@ -99,6 +99,7 @@ class ShopFactory(factory.Factory):
             return {
                 "new_shop": new_shop,
                 "category_id": category_id,
+                "category_name": category_name,
                 "category_slug": category_slug,
                 "item_id": item_id,
                 "item_slug": item_slug,

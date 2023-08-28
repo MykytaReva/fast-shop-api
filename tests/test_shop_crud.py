@@ -87,7 +87,7 @@ def test_get_shop_details():
     delete_user(new_shop)
 
 
-def test_get_shop_404(random_user_data, random_user_data_shop, fake):
+def test_get_shop_404():
     response = client.get("shop/fake-slug/")
     assert response.status_code == 404
     assert response.json() == {"detail": "Shop not found."}
