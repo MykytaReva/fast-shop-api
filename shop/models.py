@@ -27,8 +27,9 @@ class User(Base):
     modified_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
+    # TODO change default to False
     is_staff = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
 
     profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
