@@ -46,8 +46,8 @@ def test_shop_order_get_created_success(order_data):
     order_id = response.json()["id"]
     shop_order = get_shop_order_by_order_id(shop_id, order_id)
     response_shop = client.get(f"/shop-orders/{shop_order.id}", headers=get_headers(shop_id))
-    assert response_shop.status_code == 200
     delete_user(new_shop)
+    assert response_shop.status_code == 200
 
 
 def test_order_get_created_success(order_data):

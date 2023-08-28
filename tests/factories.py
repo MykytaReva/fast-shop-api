@@ -8,10 +8,30 @@ from fastapi.testclient import TestClient
 from shop.auth import create_access_token
 from shop.database import TestingSessionLocal
 from shop.main import app
-from shop.models import User
+from shop.models import Shop, User
 
 client = TestClient(app)
 fake = Faker()
+
+
+def get_shop_and_approve_by_user_id(user_id: int):
+    db = TestingSessionLocal()
+    shop = db.query(Shop).filter(Shop.user_id == user_id).first()
+    if not shop:
+        raise ValueError("Shop not found.")
+    shop.is_approved = True
+    db.commit()
+    return shop
+
+
+def ger_user_by_id_approve(user_id: int):
+    db = TestingSessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError("User not found.")
+    user.is_active = True
+    db.commit()
+    return user
 
 
 def delete_user_id(user_id):
@@ -43,7 +63,7 @@ class ShopFactory(factory.Factory):
     last_name = factory.Faker("last_name")
     base_email = factory.Faker("email")
     is_staff = False
-    is_active = False
+    is_active = True
     is_superuser = False
     password = factory.Faker("password")
     shop_name_base = factory.Faker("company")  # Base name for shop_name
@@ -73,10 +93,12 @@ class ShopFactory(factory.Factory):
         }
 
         new_shop = create_user(user_data)
+        ger_user_by_id_approve(new_shop.json()["id"])
         if new_shop.status_code != 200:
             raise ValueError(new_shop.json())
         assert new_shop.status_code == 200
         if role == "SHOP":
+            get_shop_and_approve_by_user_id(new_shop.json()["id"])
             category_data = {"name": "fixture-category"}
             response_category = client.post("category/", headers=get_headers(new_shop.json()["id"]), json=category_data)
             assert response_category.status_code == 200

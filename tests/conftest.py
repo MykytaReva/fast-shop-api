@@ -23,6 +23,17 @@ def get_amount_of_all_items():
     return db.query(Item).count()
 
 
+# TODO only for development, remove later and refactor tests
+def get_user_by_id_and_assign_inactive(user_id: int):
+    db = TestingSessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.is_active = False
+    db.commit()
+    return user
+
+
 def get_shop_by_user_id(user_id: int):
     db = TestingSessionLocal()
     shop = db.query(Shop).filter(Shop.user_id == user_id).first()
@@ -52,6 +63,16 @@ def get_shop_by_shop_id(shop_id: int):
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found.")
     return shop
+
+
+def ger_user_by_id_approve(user_id: int):
+    db = TestingSessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError("User not found.")
+    user.is_active = True
+    db.commit()
+    return user
 
 
 def delete_user(response_json):

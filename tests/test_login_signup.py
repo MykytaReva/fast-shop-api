@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from conftest import client, create_user, delete_user
+from conftest import client, create_user, delete_user, get_user_by_id_and_assign_inactive
 from jose import jwt
 
 from shop import constants
@@ -103,10 +103,11 @@ def test_email_verification_success():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
+    get_user_by_id_and_assign_inactive(user_id)
     token = jwt.encode({"sub": str(user_id)}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
     response = client.get(f"/verification/?token={token}")
-    assert response.status_code == 200
     delete_user(new_user)
+    assert response.status_code == 200
 
 
 def test_email_verification_invalid_token():
@@ -116,9 +117,9 @@ def test_email_verification_invalid_token():
     user_id = new_user.json()["id"]
     token = jwt.encode({"sub": str(user_id)}, "INCORRECT_SECRET", algorithm=constants.ALGORITHM)
     response = client.get(f"/verification/?token={token}")
+    delete_user(new_user)
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid token."}
-    delete_user(new_user)
 
 
 def test_email_verification_expired_token():
@@ -126,6 +127,7 @@ def test_email_verification_expired_token():
     new_user = user_data_dict["new_user"]
     assert new_user.status_code == 200
     user_id = new_user.json()["id"]
+    get_user_by_id_and_assign_inactive(user_id)
     # Generate token with a future expiration time for the first verification
     future_expiration = datetime.utcnow() + timedelta(hours=1)
     token = jwt.encode(
@@ -139,9 +141,9 @@ def test_email_verification_expired_token():
         {"sub": str(user_id), "exp": past_expiration}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
     )
     response = client.get(f"/verification/?token={exp_token}")
+    delete_user(new_user)
     assert response.status_code == 401
     assert response.json() == {"detail": "Token has expired."}
-    delete_user(new_user)
 
 
 def test_reset_password_success():

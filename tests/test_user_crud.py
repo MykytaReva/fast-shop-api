@@ -1,4 +1,4 @@
-from conftest import client, create_user, delete_user, get_headers
+from conftest import client, create_user, delete_user, ger_user_by_id_approve, get_headers
 
 from shop import models
 from shop.database import test_engine
@@ -10,6 +10,7 @@ models.Base.metadata.create_all(bind=test_engine)
 
 def test_read_users_me_authenticated_user_success(random_user_data):
     new_user = create_user(random_user_data)
+    ger_user_by_id_approve(new_user.json()["id"])
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
 
@@ -120,9 +121,11 @@ def test_patch_user_no_changes_detected():
 
 def test_patch_user_username_taken(random_user_data, fake):
     new_user_1 = create_user(random_user_data)
+    ger_user_by_id_approve(new_user_1.json()["id"])
     random_user_data["email"] = fake.email()
     random_user_data["username"] = fake.user_name()
     new_user_2 = create_user(random_user_data)
+    ger_user_by_id_approve(new_user_2.json()["id"])
     assert new_user_1.status_code == 200
     assert new_user_2.status_code == 200
 

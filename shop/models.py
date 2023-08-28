@@ -27,9 +27,8 @@ class User(Base):
     modified_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
-    # TODO change default to False
     is_staff = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
 
     profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
@@ -95,9 +94,9 @@ class Shop(Base):
     avatar = Column(String(255), nullable=True)
     cover_photo = Column(String(255), nullable=True)
     description = Column(Text)
-    # TODO change is_approved/is_available for category/shop/item to False by default
+
     slug = Column(String, unique=True)
-    is_approved = Column(Boolean, default=True)
+    is_approved = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     modified_at = Column(DateTime(timezone=True), onupdate=func.now())
 
