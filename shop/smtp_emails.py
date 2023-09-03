@@ -32,12 +32,12 @@ def send_activation_email(user_id: int, db: SessionLocal):
         )
         html_content = (
             "You have successfully registered to our shop."
-            f" Please click <a href='http://127.0.0.1:8000/verification/?token={token}'>here</a>"
+            f" Please click <a href='http://{constants.HOST}/verification/?token={token}'>here</a>"
             " to activate your account."
         )
         # Create a Mail object
         message = Mail(
-            from_email=os.environ.get("FROM_EMAIL"), to_emails=user_email, subject=subject, html_content=html_content
+            from_email=constants.FROM_EMAIL, to_emails=user_email, subject=subject, html_content=html_content
         )
 
         # Send the email
@@ -64,9 +64,41 @@ def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
             {"sub": str(user_id), "exp": expiration_time}, constants.JWT_SECRET, algorithm=constants.ALGORITHM
         )
         html_content = (
-            f"Click <a href='http://127.0.0.1:8000/reset-password/verify/?token={reset_token}'>here</a>"
+            f"Click <a href='http://{constants.HOST}/reset-password/verify/?token={reset_token}'>here</a>"
             " to reset your password."
         )
+        # Create a Mail object
+        message = Mail(
+            from_email=os.environ.get("FROM_EMAIL"), to_emails=email, subject=subject, html_content=html_content
+        )
+
+        # Send the email
+        print('Email sent in "development" environment.')
+        sg.send(message)
+
+    except Exception as e:
+        print("An error occurred:", str(e))
+
+
+def send_newsletter_activation_email(email: str):
+    try:
+        # Get your SendGrid API key from environment variables
+        sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+
+        if not sendgrid_api_key:
+            raise Exception("SendGrid API key is missing")
+
+        # Create a SendGrid client
+        sg = SendGridAPIClient(sendgrid_api_key)
+
+        subject = "Activate Your Subscription"
+        expiration_time = datetime.utcnow() + timedelta(hours=12)
+        token = jwt.encode({"sub": email, "exp": expiration_time}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
+        html_content = (
+            f"Click <a href=http://{constants.HOST}/newsletter/verify/?token={token}>here</a>"
+            " to activate your subscription."
+        )
+
         # Create a Mail object
         message = Mail(
             from_email=os.environ.get("FROM_EMAIL"), to_emails=email, subject=subject, html_content=html_content

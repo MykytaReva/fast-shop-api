@@ -431,3 +431,25 @@ class ShopOrderOut(ShopOrderBase):
     total_paid: int
     billing_status: bool
     created_at: datetime
+
+
+class NewsLetterBase(BaseModel):
+    """
+    Base Pydantic model for NewsLetter. Includes common fields for create and update operations.
+    """
+
+    email: EmailStr
+
+    class Config:
+        validate_assignment = True
+        extra = "forbid"
+
+
+class NewsLetterOut(NewsLetterBase):
+    """
+    Pydantic model for sending NewsLetter data in API responses.
+    """
+
+    id: int
+    is_active: bool
+    created_at: datetime

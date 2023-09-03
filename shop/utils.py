@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from . import constants
 from .auth import oauth2_scheme
 from .database import SessionLocal, TestingSessionLocal
-from .models import CartItem, Category, Item, Order, OrderItem, Shop, ShopOrder, User
+from .models import CartItem, Category, Item, NewsLetter, Order, OrderItem, Shop, ShopOrder, User
 from .schemas import TokenData
 
 
@@ -402,3 +402,11 @@ def get_total_revenue(db: Session, shop_id: int):
     if not total_revenue:
         raise HTTPException(status_code=409, detail="No orders have been made in your shop.")
     return {"Total revenue": total_revenue}
+
+
+def check_if_email_already_signed_for_newsletter(db: Session, email: str):
+    existing_email = db.query(NewsLetter).filter(NewsLetter.email == email, NewsLetter.is_active == True).first()
+    if existing_email:
+        raise HTTPException(status_code=409, detail="Email is already signed for newsletter.")
+
+    return existing_email

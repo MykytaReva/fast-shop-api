@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm.session import Session
 
 from . import constants
-from .models import User
+from .models import NewsLetter, User
 
 JWTPayloadMapping = MutableMapping[str, Union[datetime, bool, str, List[str], List[int]]]
 
@@ -62,4 +62,26 @@ def verify_token(token: str, db: Session):
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired.")
     except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+
+def verify_token_newsletter(token: str, db: Session):
+    try:
+        payload = jwt.decode(token, constants.JWT_SECRET, algorithms=[constants.ALGORITHM])
+        email: str = payload.get("sub")
+
+        if email is None:
+            raise HTTPException(status_code=401, detail="Email not found.")
+
+        existing_email = db.query(NewsLetter).filter(NewsLetter.email == email).first()
+
+        if not existing_email:
+            raise HTTPException(status_code=404, detail="Email not found.")
+
+        return existing_email
+
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired.")
+
+    except JWTError as e:
         raise HTTPException(status_code=401, detail="Invalid token.")

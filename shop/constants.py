@@ -10,3 +10,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
 
 STRIPE_API_KEY = os.environ.get("STRIPE_SECRET_KEY")
+
+HOST = os.environ.get("HOST")
+
+FROM_EMAIL = os.environ.get("FROM_EMAIL")

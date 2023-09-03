@@ -237,3 +237,15 @@ class ShopOrder(Base):
     shop = relationship("Shop", back_populates="shop_orders")
     order = relationship("Order", back_populates="shop_orders")
     user = relationship("User", back_populates="shop_orders")
+
+
+class NewsLetter(Base):
+    __tablename__ = "newsletter"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    email = Column(String(100), unique=True)
+    is_active = Column(Boolean, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -10,9 +10,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from . import models, schemas, utils
-from .auth import authenticate, create_access_token, verify_token
+from .auth import authenticate, create_access_token, verify_token, verify_token_newsletter
 from .database import SessionLocal, engine
-from .smtp_emails import send_activation_email, send_reset_password_email
+from .smtp_emails import send_activation_email, send_newsletter_activation_email, send_reset_password_email
 from .utils import check_free_category_name, get_current_shop, get_current_user, get_db
 
 app = FastAPI()
@@ -486,7 +486,7 @@ def get_item(
     return item
 
 
-@app.get("/verification/", response_class=HTMLResponse)
+@app.get("/verification/")
 async def email_verification(request: Request, token: str, db: Session = Depends(get_db)):
     """
     Endpoint to verify user's email.
@@ -498,7 +498,7 @@ async def email_verification(request: Request, token: str, db: Session = Depends
         db.refresh(user)
         return HTMLResponse(content="<h1>Email verified</h1>", status_code=200)
     else:
-        return HTMLResponse(content="<h1>Your account already activated.</h1>", status_code=400)
+        return {"detail": "Your account already activated."}
 
 
 @app.get("/reset-password/")
@@ -968,3 +968,50 @@ def get_wish_list_items(
     Endpoint to get all WishListItems for the current User.
     """
     return current_user.items
+
+
+@app.post("/newsletter/signup/", response_model=schemas.NewsLetterOut)
+def newsletter_signup(
+    newsletter_data: schemas.NewsLetterBase,
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to create a new Newsletter in the database.
+
+    Parameters:
+    - newsletter_data (schemas.NewsletterCreate): Newsletter data received from the request body.
+
+    Returns:
+    - schemas.Newsletter: The newly created Newsletter as a Pydantic model.
+
+    Raises:
+    - HTTPException 400: If the request data is invalid.
+    - HTTPException 409: If the slug already exists in the database.
+    """
+    utils.check_if_email_already_signed_for_newsletter(db, newsletter_data.email)
+    newsletter = db.query(models.NewsLetter).filter(models.NewsLetter.email == newsletter_data.email).first()
+    if not newsletter:
+        newsletter = models.NewsLetter(
+            email=newsletter_data.email,
+        )
+        db.add(newsletter)
+        db.commit()
+        db.refresh(newsletter)
+    send_newsletter_activation_email(newsletter_data.email)
+
+    return newsletter
+
+
+@app.get("/newsletter/verify/")
+async def email_verification_newsletter(token: str, db: Session = Depends(get_db)):
+    """
+    Endpoint to verify user's email for newsletter.
+    """
+    newsletter = verify_token_newsletter(token, db)
+    if newsletter and not newsletter.is_active:
+        newsletter.is_active = True
+        db.commit()
+        db.refresh(newsletter)
+        return {"detail": "Email verified."}
+    else:
+        return {"detail": "Your email already activated."}
