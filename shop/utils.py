@@ -352,12 +352,15 @@ def get_stats_for_each_item(db: Session, shop_id: int):
     )
 
     for order_item in order_items:
+        item = db.query(Item).filter(Item.id == order_item.item_id).first()
         if order_item.item_id not in item_price_quantity_dict:
             item_price_quantity_dict[order_item.item_id]["price"] = order_item.price
             item_price_quantity_dict[order_item.item_id]["quantity"] = order_item.quantity
         else:
             item_price_quantity_dict[order_item.item_id]["price"] += order_item.price
             item_price_quantity_dict[order_item.item_id]["quantity"] += order_item.quantity
+
+        item_price_quantity_dict[order_item.item_id]["wish_list_count"] = len(item.users)
 
     if not item_price_quantity_dict:
         raise HTTPException(status_code=409, detail="No items have been sold in your shop.")

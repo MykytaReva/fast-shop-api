@@ -1,10 +1,17 @@
 from passlib.context import CryptContext
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from .database import Base
 from .schemas import ShopOrderStatusEnum, UserRoleEnum
+
+association_table = Table(
+    "wish_list",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+    Column("item_id", ForeignKey("item.id"), primary_key=True),
+)
 
 
 class User(Base):
@@ -36,6 +43,8 @@ class User(Base):
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     shop_orders = relationship("ShopOrder", back_populates="user")
+
+    items = relationship("Item", secondary=association_table, back_populates="users")
 
     # Property to access the hashed password
     @property
@@ -147,6 +156,8 @@ class Item(Base):
     shop = relationship("Shop", back_populates="items")
     cart_items = relationship("CartItem", back_populates="item", cascade="all, delete-orphan")
     order_items = relationship("OrderItem", back_populates="item", cascade="all, delete-orphan")
+
+    users = relationship("User", secondary=association_table, back_populates="items")
 
 
 class CartItem(Base):

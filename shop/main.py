@@ -937,3 +937,34 @@ def get_total_revenue_with_filtering(
     else:
         revenue = utils.get_total_revenue(db, current_shop.id)
         return revenue
+
+
+@app.post("/wish-list/{item_slug}")
+def add_to_the_wish_list(
+    item_slug: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to add an Item to the WishList.
+    """
+    item = utils.get_item_by_slug(db, item_slug)
+    if item:
+        if current_user not in item.users:
+            current_user.items.append(item)
+            db.commit()
+            return {"detail": "Item added to the wish list."}
+        else:
+            current_user.items.remove(item)
+            db.commit()
+            return {"detail": "Item removed from the wish list."}
+
+
+@app.get("/wish-list/")
+def get_wish_list_items(
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Endpoint to get all WishListItems for the current User.
+    """
+    return current_user.items
