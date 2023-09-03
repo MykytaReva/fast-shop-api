@@ -220,6 +220,8 @@ class ShopOrder(Base):
     total_paid = Column(Float(precision=2))
     status = Column(Enum(ShopOrderStatusEnum), default=ShopOrderStatusEnum.NEW)
 
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=func.now())
+
     # Relationships
     shop = relationship("Shop", back_populates="shop_orders")
     order = relationship("Order", back_populates="shop_orders")

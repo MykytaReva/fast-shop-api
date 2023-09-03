@@ -430,3 +430,4 @@ class ShopOrderOut(ShopOrderBase):
     status: ShopOrderStatusEnum
     total_paid: int
     billing_status: bool
+    created_at: datetime

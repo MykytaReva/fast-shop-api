@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 
 from fastapi import Depends, HTTPException
 from jose import JWTError, jwt
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from . import constants
 from .auth import oauth2_scheme
 from .database import SessionLocal, TestingSessionLocal
-from .models import CartItem, Category, Item, Order, Shop, ShopOrder, User
+from .models import CartItem, Category, Item, Order, OrderItem, Shop, ShopOrder, User
 from .schemas import TokenData
 
 
@@ -268,6 +269,13 @@ def get_order_by_order_id(db: Session, order_id: int, user_id: int):
     return existing_order
 
 
+def get_order_by_order_key(db: Session, order_key: str):
+    existing_order = db.query(Order).filter(Order.order_key == order_key).first()
+    if not existing_order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return existing_order
+
+
 def get_shop_orders(db: Session, shop_id: int):
     existing_orders = db.query(ShopOrder).filter(ShopOrder.shop_id == shop_id, ShopOrder.billing_status == True).all()
     if not existing_orders:
@@ -288,3 +296,106 @@ def get_shop_order_by_order_id(db: Session, order_id: int, shop_id: int):
     if not existing_order:
         raise HTTPException(status_code=404, detail="Order not found.")
     return existing_order
+
+
+def get_shop_orders_by_user_id_for_shop(db: Session, user_id: int, shop_id: int):
+    existing_orders = (
+        db.query(ShopOrder)
+        .filter(
+            ShopOrder.shop_id == shop_id,
+            ShopOrder.user_id == user_id,
+            ShopOrder.billing_status == True,
+        )
+        .all()
+    )
+    if not existing_orders:
+        raise HTTPException(status_code=409, detail="User has no orders in your shop.")
+    return existing_orders
+
+
+def get_all_users_ordered_in_shop(db: Session, shop_id: int):
+    shop_orders = (
+        db.query(ShopOrder)
+        .filter(
+            ShopOrder.shop_id == shop_id,
+            ShopOrder.billing_status == True,
+        )
+        .all()
+    )
+    users_per_shop = set()
+    for order in shop_orders:
+        user = db.query(User).filter(User.id == order.user_id).first()
+        users_per_shop.add(user)
+    if not users_per_shop:
+        raise HTTPException(status_code=409, detail="No users have ordered in your shop.")
+    return users_per_shop
+
+
+def get_stats_for_each_item(db: Session, shop_id: int):
+    items_per_shop = (
+        db.query(Item)
+        .filter(
+            Item.shop_id == shop_id,
+        )
+        .all()
+    )
+    items_ids = [item.id for item in items_per_shop]
+
+    item_price_quantity_dict = defaultdict(dict)
+
+    order_items = (
+        db.query(OrderItem)
+        .filter(
+            OrderItem.item_id.in_(items_ids),
+        )
+        .all()
+    )
+
+    for order_item in order_items:
+        if order_item.item_id not in item_price_quantity_dict:
+            item_price_quantity_dict[order_item.item_id]["price"] = order_item.price
+            item_price_quantity_dict[order_item.item_id]["quantity"] = order_item.quantity
+        else:
+            item_price_quantity_dict[order_item.item_id]["price"] += order_item.price
+            item_price_quantity_dict[order_item.item_id]["quantity"] += order_item.quantity
+
+    if not item_price_quantity_dict:
+        raise HTTPException(status_code=409, detail="No items have been sold in your shop.")
+
+    return item_price_quantity_dict
+
+
+def get_total_revenue_with_filtering(db: Session, shop_id: int, start_date: str, end_date: str):
+    shop_orders = (
+        db.query(ShopOrder)
+        .filter(
+            ShopOrder.shop_id == shop_id,
+            ShopOrder.billing_status == True,
+            ShopOrder.created_at.between(start_date, end_date),
+        )
+        .all()
+    )
+
+    total_revenue = 0
+    for order in shop_orders:
+        total_revenue += order.total_paid
+    if not total_revenue:
+        raise HTTPException(status_code=409, detail="You have no orders in your shop for the given period.")
+    return {"Revenue": total_revenue}
+
+
+def get_total_revenue(db: Session, shop_id: int):
+    shop_orders = (
+        db.query(ShopOrder)
+        .filter(
+            ShopOrder.shop_id == shop_id,
+            ShopOrder.billing_status == True,
+        )
+        .all()
+    )
+    total_revenue = 0
+    for order in shop_orders:
+        total_revenue += order.total_paid
+    if not total_revenue:
+        raise HTTPException(status_code=409, detail="No orders have been made in your shop.")
+    return {"Total revenue": total_revenue}

@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from datetime import date
 from typing import Union
 
 import stripe
@@ -372,9 +373,11 @@ def create_item(
     - HTTPException 400: If the request data is invalid.
     - HTTPException 409: If the slug already exists in the database.
     """
-    # allowed_fields = set(schemas.ItemCreate.model_fields.keys())
-    utils.check_free_item_name(db, current_shop.id, item_data.name)
+    possible_categories_id = [category.id for category in current_shop.categories]
+    if item_data.category_id not in possible_categories_id:
+        raise HTTPException(status_code=400, detail="Category not found.")
 
+    utils.check_free_item_name(db, current_shop.id, item_data.name)
     slug = utils.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
 
     new_item = models.Item(
@@ -483,7 +486,6 @@ def get_item(
     return item
 
 
-# TODO HTMLResponse?
 @app.get("/verification/", response_class=HTMLResponse)
 async def email_verification(request: Request, token: str, db: Session = Depends(get_db)):
     """
@@ -569,7 +571,7 @@ def add_to_the_cart(
             return cart_item
 
 
-@app.get("/cart/", response_model=Union[list[schemas.CartOut], dict])
+@app.get("/cart/")
 def get_cart_items(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -578,7 +580,19 @@ def get_cart_items(
     Endpoint to get all CartItems for the current User.
     """
     cart_items = utils.get_cart_items(db, current_user.id)
-    return cart_items
+    total_amount = sum(cart_item.price for cart_item in cart_items)
+    cart_out_list = []
+    for cart_item in cart_items:
+        cart_out = schemas.CartOut(
+            item_id=cart_item.item_id,
+            quantity=cart_item.quantity,
+            price=cart_item.price,
+        )
+        cart_out_list.append(cart_out)
+
+    cart_out = {"total_amount": total_amount, "cart_items": cart_out_list}
+
+    return cart_out
 
 
 @app.post("/subtract-from-the-cart/{item_slug}/", response_model=Union[schemas.CartOut, dict])
@@ -651,8 +665,11 @@ def post_order_details(
     db.commit()
     db.refresh(new_order)
 
-    for item in cart_items:
-        order_item = models.OrderItem(order_id=new_order.id, item_id=item.id, quantity=item.quantity, price=item.price)
+    for cart_item in cart_items:
+        order_item = models.OrderItem(
+            order_id=new_order.id, item_id=cart_item.item_id, quantity=cart_item.quantity, price=cart_item.price
+        )
+
         db.add(order_item)
 
     shop_items = defaultdict(list)
@@ -691,7 +708,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
         if user_id is None:
             return {"error": "User ID not found"}
-        order = utils.get_order_by_order_key(db, order_key, user_id)
+        order = utils.get_order_by_order_key(db, order_key)
         shop_order = db.query(models.ShopOrder).filter(models.ShopOrder.order_id == order.id).first()
         order.billing_status = True
         shop_order.billing_status = True
@@ -712,7 +729,7 @@ def get_orders(current_user: models.User = Depends(get_current_user), db: Sessio
     return orders
 
 
-@app.get("/shop-orders/", response_model=list[schemas.ShopOrderOut])
+@app.get("/shop-admin/orders/", response_model=list[schemas.ShopOrderOut])
 def get_shop_orders(
     current_shop: models.Shop = Depends(get_current_shop),
     db: Session = Depends(get_db),
@@ -721,7 +738,7 @@ def get_shop_orders(
     return orders
 
 
-@app.get("/shop-orders/{order_id}", response_model=schemas.ShopOrderOut)
+@app.get("/shop-admin/orders/{order_id}", response_model=schemas.ShopOrderOut)
 def get_shop_order(
     order_id: int,
     current_shop: models.Shop = Depends(get_current_shop),
@@ -731,7 +748,7 @@ def get_shop_order(
     return order
 
 
-@app.patch("/shop-orders/{order_id}/", response_model=schemas.ShopOrderOut)
+@app.patch("/shop-admin/orders/{order_id}/", response_model=schemas.ShopOrderOut)
 def update_shop_order_status(
     order_id: int,
     order_data: schemas.ShopOrderPatch,
@@ -772,8 +789,7 @@ def update_shop_order_status(
     return order
 
 
-# @app.get("/items/", response_model=list[schemas.ItemOut])
-@app.get("/items/")
+@app.get("/items/", response_model=list[schemas.ItemOut])
 def get_all_items_with_filtering(
     shop: str = Query(None, description="Filter items by shop slug"),
     category: str = Query(None, description="Filter items by category name"),
@@ -839,3 +855,85 @@ def get_all_items_with_filtering(
             return items_by_category
 
     return all_items
+
+
+@app.get("/shop-admin/categories/", response_model=list[schemas.CategoryOut])
+def get_all_categories_for_shop_admin(
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get all categories for shop admin
+    """
+    categories = db.query(models.Category).filter(models.Category.shop_id == current_shop.id).all()
+    return categories
+
+
+@app.get("/shop-admin/items/", response_model=list[schemas.ItemOut])
+def get_all_items_for_shop_admin(
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get all items for shop admin
+    """
+    items = db.query(models.Item).filter(models.Item.shop_id == current_shop.id).all()
+    return items
+
+
+@app.get("/shop-admin/users/", response_model=list[schemas.UserOut])
+def get_all_users_for_shop(
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get all users for shop admin
+    """
+    users = utils.get_all_users_ordered_in_shop(db, current_shop.id)
+    return users
+
+
+@app.get("/shop-admin/users/{user_id}", response_model=list[schemas.ShopOrderOut])
+def get_user_orders_shop(
+    user_id: int,
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get user for shop admin
+    """
+    orders = utils.get_shop_orders_by_user_id_for_shop(db, user_id, current_shop.id)
+    return orders
+
+
+@app.get("/shop-admin/stats-items/")
+def get_stats_items_per_shop(
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get stats of items per shop
+    """
+    stats = utils.get_stats_for_each_item(db, current_shop.id)
+    return stats
+
+
+@app.get("/shop-admin/revenue/")
+def get_total_revenue_with_filtering(
+    start_date: date = Query(None, description="Filter orders by start date"),
+    end_date: date = Query(None, description="Filter orders by end date"),
+    current_shop: models.Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to get total revenue with filtering by start date and end date
+    """
+    if start_date and end_date:
+        if start_date > end_date:
+            raise HTTPException(status_code=400, detail="Start date cannot be greater than end date.")
+
+        revenue = utils.get_total_revenue_with_filtering(db, current_shop.id, str(start_date), str(end_date))
+        return revenue
+    else:
+        revenue = utils.get_total_revenue(db, current_shop.id)
+        return revenue
