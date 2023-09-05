@@ -6,11 +6,11 @@ from jose import JWTError, jwt
 from slugify import slugify
 from sqlalchemy.orm import Session
 
-from . import constants
-from .auth import oauth2_scheme
-from .database import SessionLocal, TestingSessionLocal
-from .models import CartItem, Category, Item, NewsLetter, Order, OrderItem, Shop, ShopOrder, User
-from .schemas import TokenData
+from shop import constants
+from shop.auth import oauth2_scheme
+from shop.database import SessionLocal, TestingSessionLocal
+from shop.models import CartItem, Category, Item, NewsLetter, Order, OrderItem, Shop, ShopOrder, User
+from shop.schemas import TokenData
 
 
 # Dependency to get the database session

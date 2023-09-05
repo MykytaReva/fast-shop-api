@@ -3,8 +3,8 @@ from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integ
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from .database import Base
-from .schemas import ShopOrderStatusEnum, UserRoleEnum
+from shop.database import Base
+from shop.schemas import ShopOrderStatusEnum, UserRoleEnum
 
 association_table = Table(
     "wish_list",

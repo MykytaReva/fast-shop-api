@@ -8,8 +8,8 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm.session import Session
 
-from . import constants
-from .models import NewsLetter, User
+from shop import constants
+from shop.models import NewsLetter, User
 
 JWTPayloadMapping = MutableMapping[str, Union[datetime, bool, str, List[str], List[int]]]
 

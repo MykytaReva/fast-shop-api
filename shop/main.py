@@ -9,11 +9,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from . import models, schemas, utils
-from .auth import authenticate, create_access_token, verify_token, verify_token_newsletter
-from .database import SessionLocal, engine
-from .smtp_emails import send_activation_email, send_newsletter_activation_email, send_reset_password_email
-from .utils import check_free_category_name, get_current_shop, get_current_user, get_db
+from shop import models, schemas, utils
+from shop.auth import authenticate, create_access_token, verify_token, verify_token_newsletter
+from shop.database import SessionLocal, engine
+from shop.smtp_emails import send_activation_email, send_newsletter_activation_email, send_reset_password_email
+from shop.utils import check_free_category_name, get_current_shop, get_current_user, get_db
 
 app = FastAPI()
 
