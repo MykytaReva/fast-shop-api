@@ -95,8 +95,9 @@ def send_newsletter_activation_email(email: str):
         expiration_time = datetime.utcnow() + timedelta(hours=12)
         token = jwt.encode({"sub": email, "exp": expiration_time}, constants.JWT_SECRET, algorithm=constants.ALGORITHM)
         html_content = (
-            f"Click <a href=http://{constants.HOST}/newsletter/verify/?token={token}>here</a>"
-            " to activate your subscription."
+            f"<p>Click <a href=http://{constants.HOST}/newsletter/verify/?token={token}>here</a> to activate your"
+            " subscription.</p><p>If you want to unsubscribe, click <a"
+            f" href=http://{constants.HOST}/newsletter/unsubscribe/?token={token}>here</a></p>"
         )
 
         # Create a Mail object

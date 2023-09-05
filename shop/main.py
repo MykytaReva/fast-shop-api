@@ -971,8 +971,9 @@ def get_wish_list_items(
 
 
 @app.post("/newsletter/signup/", response_model=schemas.NewsLetterOut)
-def newsletter_signup(
+async def newsletter_signup(
     newsletter_data: schemas.NewsLetterBase,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """
@@ -997,7 +998,7 @@ def newsletter_signup(
         db.add(newsletter)
         db.commit()
         db.refresh(newsletter)
-    send_newsletter_activation_email(newsletter_data.email)
+    background_tasks.add_task(send_newsletter_activation_email, newsletter_data.email)
 
     return newsletter
 
@@ -1015,3 +1016,18 @@ async def email_verification_newsletter(token: str, db: Session = Depends(get_db
         return {"detail": "Email verified."}
     else:
         return {"detail": "Your email already activated."}
+
+
+@app.get("/newsletter/unsubscribe/")
+async def email_unsubscribe_newsletter(token: str, db: Session = Depends(get_db)):
+    """
+    Endpoint to unsubscribe user's email from newsletter.
+    """
+    newsletter = verify_token_newsletter(token, db)
+    if newsletter and newsletter.is_active:
+        newsletter.is_active = False
+        db.commit()
+        db.refresh(newsletter)
+        return {"detail": "Email unsubscribed."}
+    else:
+        return {"detail": "You are not subscribed for a newsletter."}
