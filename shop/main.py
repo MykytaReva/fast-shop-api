@@ -1013,9 +1013,9 @@ async def email_verification_newsletter(token: str, db: Session = Depends(get_db
         newsletter.is_active = True
         db.commit()
         db.refresh(newsletter)
-        return {"detail": "Email verified."}
+        return {"detail": "Email is successfully verified."}
     else:
-        return {"detail": "Your email already activated."}
+        raise HTTPException(status_code=409, detail="Your email already activated.")
 
 
 @app.get("/newsletter/unsubscribe/")
@@ -1028,6 +1028,6 @@ async def email_unsubscribe_newsletter(token: str, db: Session = Depends(get_db)
         newsletter.is_active = False
         db.commit()
         db.refresh(newsletter)
-        return {"detail": "Email unsubscribed."}
+        return {"detail": "You are successfully unsubscribed."}
     else:
-        return {"detail": "You are not subscribed for a newsletter."}
+        raise HTTPException(status_code=409, detail="You are not subscribed for a newsletter.")

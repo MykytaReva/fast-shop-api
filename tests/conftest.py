@@ -8,9 +8,19 @@ from fastapi.testclient import TestClient
 from shop.auth import create_access_token
 from shop.database import TestingSessionLocal
 from shop.main import app
-from shop.models import Item, Shop, ShopOrder, User
+from shop.models import Item, NewsLetter, Shop, ShopOrder, User
 
 client = TestClient(app)
+
+
+def get_newsletter_and_activate(email: str):
+    db = TestingSessionLocal()
+    newsletter = db.query(NewsLetter).filter(NewsLetter.email == email).first()
+    if not newsletter:
+        raise ValueError("Newsletter not found.")
+    newsletter.is_active = True
+    db.commit()
+    return newsletter
 
 
 def get_amount_of_items_per_shop(shop_id: int):
