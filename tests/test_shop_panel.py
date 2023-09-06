@@ -149,3 +149,30 @@ def test_get_total_revenue_without_filtering(order_data):
     assert response.status_code == 200
     assert response.json()["Total revenue"] == response_order.json()["total_paid"]
     delete_user(new_shop)
+
+
+def test_get_total_revenue_with_filtering_date_issue(order_data):
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    user_id = new_shop.json()["id"]
+    item_slug = user_data_dict["item_slug"]
+    response_cart = client.post(f"/add-to-the-cart/{item_slug}/", headers=get_headers(user_id))
+    assert response_cart.status_code == 200
+    response_order = create_order(order_data, user_id)
+    assert response_order.status_code == 200
+    response = client.get(
+        "/shop-admin/revenue/?start_date=2023-01-01&end_date=2020-09-01", headers=get_headers(user_id)
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Start date cannot be greater than end date."}
+    delete_user(new_shop)
+
+
+def test_get_total_revenue_no_orders():
+    user_data_dict = ShopFactory.create()
+    new_shop = user_data_dict["new_shop"]
+    user_id = new_shop.json()["id"]
+    response = client.get("/shop-admin/revenue/", headers=get_headers(user_id))
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No orders have been made in your shop."}
+    delete_user(new_shop)

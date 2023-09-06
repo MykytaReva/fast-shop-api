@@ -934,7 +934,7 @@ def get_total_revenue_with_filtering(
     """
     if start_date and end_date:
         if start_date > end_date:
-            raise HTTPException(status_code=400, detail="Start date cannot be greater than end date.")
+            raise HTTPException(status_code=409, detail="Start date cannot be greater than end date.")
 
         revenue = utils.get_total_revenue_with_filtering(db, current_shop.id, str(start_date), str(end_date))
         return revenue
