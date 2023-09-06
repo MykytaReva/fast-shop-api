@@ -29,6 +29,30 @@ def test_create_item_success(fake):
     delete_user(new_shop)
 
 
+def test_create_item_category_from_another_shop(fake):
+    user_data_dict_1 = ShopFactory.create()
+    user_data_dict_2 = ShopFactory.create()
+
+    new_shop_1 = user_data_dict_1["new_shop"]
+    new_shop_2 = user_data_dict_2["new_shop"]
+    category_id = user_data_dict_2["category_id"]
+    assert new_shop_1.status_code == 200
+    user_id = new_shop_1.json()["id"]
+    data = {
+        "name": fake.name(),
+        "image": fake.image_url(),
+        "title": fake.text(),
+        "description": fake.text(),
+        "price": fake.pyint(),
+        "category_id": category_id,
+    }
+    response = client.post("/item/", headers=get_headers(user_id), json=data)
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Category not found."}
+    delete_user(new_shop_1)
+    delete_user(new_shop_2)
+
+
 def test_create_item_name_is_taken(fake):
     user_data_dict = ShopFactory.create()
     new_shop = user_data_dict["new_shop"]

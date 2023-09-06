@@ -1,11 +1,4 @@
-from tests.conftest import (
-    client,
-    delete_user,
-    get_amount_of_all_items,
-    get_amount_of_items_per_shop,
-    get_headers,
-    get_shop_by_user_id,
-)
+from tests.conftest import client, delete_user, get_headers
 from tests.factories import ShopFactory
 
 

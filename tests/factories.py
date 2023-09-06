@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import factory
 from faker import Faker
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from shop.auth import create_access_token
@@ -32,6 +33,14 @@ def ger_user_by_id_approve(user_id: int):
     user.is_active = True
     db.commit()
     return user
+
+
+def get_shop_id_by_user_id(user_id: int):
+    db = TestingSessionLocal()
+    shop = db.query(Shop).filter(Shop.user_id == user_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found.")
+    return shop.id
 
 
 def delete_user_id(user_id):
@@ -118,8 +127,11 @@ class ShopFactory(factory.Factory):
             item_slug = response_item.json()["slug"]
             item_id = response_item.json()["id"]
             cart_response = client.post(f"/add-to-the-cart/{item_slug}/", headers=get_headers(new_shop.json()["id"]))
+            shop_id = get_shop_id_by_user_id(new_shop.json()["id"])
+            # TODO refactor all this return dict with all tests for normal understanding
             return {
                 "new_shop": new_shop,
+                "shop_id": shop_id,
                 "category_id": category_id,
                 "category_name": category_name,
                 "category_slug": category_slug,

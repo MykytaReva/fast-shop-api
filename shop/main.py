@@ -375,7 +375,7 @@ def create_item(
     """
     possible_categories_id = [category.id for category in current_shop.categories]
     if item_data.category_id not in possible_categories_id:
-        raise HTTPException(status_code=400, detail="Category not found.")
+        raise HTTPException(status_code=409, detail="Category not found.")
 
     utils.check_free_item_name(db, current_shop.id, item_data.name)
     slug = utils.generate_unique_item_slug(db, current_shop.shop_name, item_data.name)
@@ -866,6 +866,8 @@ def get_all_categories_for_shop_admin(
     Endpoint to get all categories for shop admin
     """
     categories = db.query(models.Category).filter(models.Category.shop_id == current_shop.id).all()
+    if not categories:
+        raise HTTPException(status_code=409, detail="No categories found")
     return categories
 
 
@@ -878,6 +880,8 @@ def get_all_items_for_shop_admin(
     Endpoint to get all items for shop admin
     """
     items = db.query(models.Item).filter(models.Item.shop_id == current_shop.id).all()
+    if not items:
+        raise HTTPException(status_code=409, detail="No items found")
     return items
 
 
