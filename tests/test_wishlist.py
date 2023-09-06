@@ -23,6 +23,7 @@ def test_add_remove_to_wishlist_success():
     )
     assert response_remove.status_code == 200
     assert response_remove.json() == {"detail": "Item removed from the wish list."}
+    delete_user(new_shop)
 
 
 def test_get_wishlist_items():
@@ -37,6 +38,7 @@ def test_get_wishlist_items():
     response_get = client.get(f"/wish-list/", headers=get_headers(user_id))
     assert response_get.status_code == 200
     assert response_get.json()[0]["name"] == "fixture-item"
+    delete_user(new_shop)
 
 
 def test_get_wishlist_empty():
@@ -46,3 +48,4 @@ def test_get_wishlist_empty():
     response_get = client.get(f"/wish-list/", headers=get_headers(user_id))
     assert response_get.status_code == 200
     assert response_get.json() == {"detail": "Wish list is empty."}
+    delete_user(new_shop)
