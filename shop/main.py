@@ -967,6 +967,8 @@ def get_wish_list_items(
     """
     Endpoint to get all WishListItems for the current User.
     """
+    if not current_user.items:
+        return {"detail": "Wish list is empty."}
     return current_user.items
 
 
