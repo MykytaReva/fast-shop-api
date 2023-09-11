@@ -18,6 +18,7 @@ dependencies:
     - fastapi-mail=1.4.1
     - stripe=2.49.0
     - slugify=0.0.1
+    - psycopg2-binary=2.9.7
     - pip=23
     - pre-commit=3.3
     - git
