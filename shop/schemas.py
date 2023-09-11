@@ -63,9 +63,6 @@ class UserCreate(UserBase):
     email: EmailStr
     role: UserRoleEnum
     shop_name: Optional[str]
-    is_staff: bool
-    is_active: bool
-    is_superuser: bool
     password: str
 
 

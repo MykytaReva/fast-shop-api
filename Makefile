@@ -1,5 +1,5 @@
 run:
-	cd shop && uvicorn main:app --reload
+	uvicorn shop.main:app --reload
 
 create_environment: environment.yml
 	conda env create -f environment.yml
