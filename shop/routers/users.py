@@ -1,8 +1,8 @@
-from database import SessionLocal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from shop import models, schemas, utils
+from shop.database import SessionLocal
 from shop.utils import get_current_user, get_db
 
 router = APIRouter(prefix="/user", tags=["users"])

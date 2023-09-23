@@ -54,7 +54,7 @@ def get_shop_by_user_id(user_id: int):
 
 def create_order(data, shop_id: int):
     mock_payment_intent = {"id": "mocked_payment_intent_id"}
-    with patch("shop.main.stripe.PaymentIntent.create", return_value=mock_payment_intent):
+    with patch("shop.routers.orders.stripe.PaymentIntent.create", return_value=mock_payment_intent):
         response = client.post(f"/create-order/", headers=get_headers(shop_id), json=data)
     return response
 
@@ -97,8 +97,10 @@ def delete_user(response_json):
 
 
 def create_user(data):
-    with patch("shop.main.BackgroundTasks.add_task"):
+    with patch("shop.routers.signup.BackgroundTasks.add_task"):
         response = client.post("/signup/", json=data)
+        if response.status_code != 200:
+            print(response.json())
     return response
 
 
@@ -128,9 +130,6 @@ def random_user_data(fake):
         "email": email,
         "role": "CUSTOMER",
         "shop_name": shop_name,
-        "is_staff": False,
-        "is_active": False,
-        "is_superuser": False,
         "password": password,
     }
 

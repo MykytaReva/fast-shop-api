@@ -54,7 +54,7 @@ def delete_user_id(user_id):
 
 
 def create_user(data):
-    with patch("shop.main.BackgroundTasks.add_task"):
+    with patch("shop.routers.signup.BackgroundTasks.add_task"):
         response = client.post("/signup/", json=data)
     return response
 
@@ -96,12 +96,10 @@ class ShopFactory(factory.Factory):
             "shop_name": kwargs["shop_name"],
             "first_name": kwargs["first_name"],
             "last_name": kwargs["last_name"],
-            "is_staff": kwargs["is_staff"],
-            "is_active": kwargs["is_active"],
-            "is_superuser": kwargs["is_superuser"],
         }
 
         new_shop = create_user(user_data)
+        assert new_shop.status_code == 200
         ger_user_by_id_approve(new_shop.json()["id"])
         if new_shop.status_code != 200:
             raise ValueError(new_shop.json())

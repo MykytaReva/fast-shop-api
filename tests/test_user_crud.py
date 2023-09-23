@@ -19,7 +19,7 @@ def test_read_users_me_authenticated_user_success(random_user_data):
 
     # Make a GET request to the /me endpoint with the access token in the Authorization header
     headers = {"Authorization": f"Bearer {response.json().get('access_token')}"}
-    response_me = client.get("/me", headers=headers)
+    response_me = client.get("/user/me", headers=headers)
 
     # Assert that the response is successful and contains the user data
     assert response_me.status_code == 200
@@ -37,7 +37,7 @@ def test_read_users_me_authenticated_user_fail(random_user_data):
 
     # Make a GET request to the /me endpoint with the access token in the Authorization header
     headers = {"Authorization": f"Bearer NO-TOKEN"}
-    response_me = client.get("/me", headers=headers)
+    response_me = client.get("/user/me", headers=headers)
 
     # Assert that the response is successful and contains the user data
     assert response_me.status_code == 401

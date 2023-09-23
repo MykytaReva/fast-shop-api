@@ -11,7 +11,6 @@ def test_login_success(random_user_data):
     new_user = create_user(random_user_data)
     data = {"username": random_user_data["email"], "password": random_user_data["password"]}
     response = client.post("/login", data=data)
-
     assert response.status_code == 200
     assert "access_token" in response.json()
     assert response.json()["token_type"] == "bearer"
