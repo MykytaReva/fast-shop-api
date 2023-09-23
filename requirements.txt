@@ -1,0 +1,15 @@
+fastapi
+Faker
+python-jose
+sendgrid
+python-dotenv
+slugify
+psycopg2-binary
+pre-commit
+stripe
+pytest
+uvicorn
+sqlalchemy
+passlib
+email-validator
+python-multipart

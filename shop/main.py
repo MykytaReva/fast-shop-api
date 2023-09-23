@@ -1,4 +1,3 @@
-import os
 from collections import defaultdict
 from datetime import date
 from typing import Union
@@ -9,15 +8,20 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+import constants
 from shop import models, schemas, utils
 from shop.auth import authenticate, create_access_token, verify_token, verify_token_newsletter
 from shop.database import SessionLocal, engine
 from shop.smtp_emails import send_activation_email, send_newsletter_activation_email, send_reset_password_email
 from shop.utils import check_free_category_name, get_current_shop, get_current_user, get_db
 
-app = FastAPI()
 
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+if constants.ENVIRONMENT == "prod":
+    app = FastAPI(docs_url=None, redoc_url=None)
+else:
+    app = FastAPI()
+
+stripe.api_key = constants.STRIPE_API_KEY
 
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=engine)

@@ -18,7 +18,7 @@ yarn-error.log*
 /alembic
 /alembic.ini
 .idea
-
+nginx.conf
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

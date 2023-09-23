@@ -1,11 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from shop import constants
 
-# SQLALCHEMY_DATABASE_URL = (
-#     "postgresql://postgres:nikitA75235_@shop-online-rds.cgpowvhwbhef.eu-central-1.rds.amazonaws.com:5432/shop_online_db"
-# )
-SQLALCHEMY_DATABASE_URL = "sqlite:///./shop.db"
+SQLALCHEMY_DATABASE_URL = f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}@{constants.POSTGRES_HOST}/{constants.POSTGRES_DB}"
+
+# SQLALCHEMY_DATABASE_URL = "sqlite:///./shop.db"
 SQLALCHEMY_DATABASE_URL_TEST = "sqlite:///./test.db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
