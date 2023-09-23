@@ -51,7 +51,6 @@ def _create_token(token_type: str, lifetime: timedelta, sub: str) -> str:
 
 
 def verify_token(token: str, db: Session):
-
     try:
         payload = jwt.decode(token, constants.JWT_SECRET, algorithms=[constants.ALGORITHM])
         user = db.query(User).filter(User.id == payload.get("sub")).first()
