@@ -21,4 +21,5 @@ dependencies:
     - psycopg2-binary=2.9.7
     - pip=23
     - pre-commit=3.3
+    - python-slugify=8.0.1
     - git

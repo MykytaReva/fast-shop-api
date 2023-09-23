@@ -147,7 +147,7 @@ def generate_unique_category_slug(db: Session, shop_name: str, category_name: st
 
 def generate_unique_shop_slug(db: Session, shop_name: str):
     counter = 1
-    unique_slug = shop_name
+    unique_slug = slugify(shop_name)
 
     while db.query(Shop).filter(Shop.slug == unique_slug).first():
         unique_slug = f"{unique_slug}-{counter}"

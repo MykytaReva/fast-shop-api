@@ -13,3 +13,4 @@ sqlalchemy
 passlib
 email-validator
 python-multipart
+python-slugify
