@@ -22,4 +22,5 @@ dependencies:
     - pip=23
     - pre-commit=3.3
     - python-slugify=8.0.1
-    - git
+    - httpx=0.25.0
+    - factory-boy=3.3.0

@@ -16,3 +16,5 @@ python-multipart
 python-slugify
 black
 isort
+httpx
+factory-boy
