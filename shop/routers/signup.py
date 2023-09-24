@@ -120,7 +120,7 @@ async def reset_password(token: str, request: Request, db: Session = Depends(uti
     """
     Endpoint to change password.
     """
-    data = await request.json()
+    data = request.json()
     new_password = data.get("new_password")
     user = verify_token(token, db)
     if user:

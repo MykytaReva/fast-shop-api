@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -19,9 +20,23 @@ app.include_router(items.router)
 app.include_router(shops.router)
 app.include_router(orders.router)
 
+# Configure CORS
+origins = ["http://localhost:3000"]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # You can restrict this to specific HTTP methods
+    allow_headers=["*"],  # You can restrict this to specific headers
+)
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=engine)
+
+
+@app.get("/api")
+async def index():
+    return {"message": "Welcome to shop-online API."}
 
 
 @app.get("/")
