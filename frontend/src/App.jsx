@@ -1,42 +1,35 @@
-import React, {useEffect, useState} from "react";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import {Home, Contact, NotFound, About} from './pages';
 
-
-const App = () => {
-    const [message, setMessage] = useState([]);
-
-    const getWelcomeMessage = async () => {
-        const requestOptions = {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-        };
-        const response = await fetch("/users/", requestOptions);
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.log("something went wrong");
-        } else {
-            console.log(data);
-            setMessage(data);
-        }
-    };
-
-    useEffect(() => {
-        getWelcomeMessage();
-    }, []);
-
-    return (
-      <div>
+function App() {
+  return (
+    <Router>
+      <nav>
         <ul>
-          {message.map(user => (
-            <li key={user.id}>
-              {user.first_name} {user.last_name} - {user.email}
-            </li>
-          ))}
+          <li>
+            <Link to="/">Home</Link>
+          </li>
+          <li>
+            <Link to="/about">About</Link>
+          </li>
+          <li>
+            <Link to="/contact">Contact</Link>
+          </li>
         </ul>
-      </div>
-    );
-};
-const Testing = <h3>Render testing</h3>
+      </nav>
 
-export { App, Testing };
-// export default App;
+      <Routes>
+        <Route exact path="/" component={Home} />
+        <Route path="/about" component={About} />
+        <Route path="/contact" component={Contact} />
+        <Route component={NotFound} />
+      </Routes>
+
+
+    </Router>
+  );
+}
+
+export default App;

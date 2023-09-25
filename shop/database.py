@@ -4,12 +4,12 @@ from sqlalchemy.orm import sessionmaker
 
 from shop import constants
 
-SQLALCHEMY_DATABASE_URL = (
-    f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}"
-    f"@{constants.POSTGRES_HOST}/{constants.POSTGRES_DB}"
-)
+# SQLALCHEMY_DATABASE_URL = (
+#     f"postgresql://{constants.POSTGRES_USER}:{constants.POSTGRES_PASSWORD}"
+#     f"@{constants.POSTGRES_HOST}/{constants.POSTGRES_DB}"
+# )
 
-# SQLALCHEMY_DATABASE_URL = "sqlite:///./shop.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./shop.db"
 SQLALCHEMY_DATABASE_URL_TEST = "sqlite:///./test.db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

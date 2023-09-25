@@ -7,8 +7,8 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 
 class UserRoleEnum(str, Enum):
-    SHOP = "SHOP"
     CUSTOMER = "CUSTOMER"
+    SHOP = "SHOP"
 
 
 class ShopOrderStatusEnum(str, Enum):
