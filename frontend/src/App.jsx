@@ -1,35 +1,25 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import {Home, Contact, NotFound, About} from './pages';
+import Navbar  from "./Navbar";
+import Pricing from "./pages/Pricing";
+import About from "./pages/About";
+import Home from "./pages/Home";
+import { Route, Routes } from "react-router-dom";
 
 function App() {
-  return (
-    <Router>
-      <nav>
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/about">About</Link>
-          </li>
-          <li>
-            <Link to="/contact">Contact</Link>
-          </li>
-        </ul>
-      </nav>
 
-      <Routes>
-        <Route exact path="/" component={Home} />
-        <Route path="/about" component={About} />
-        <Route path="/contact" component={Contact} />
-        <Route component={NotFound} />
-      </Routes>
+    return (
+        <>
+            <Navbar />
+            <div className="container">
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                </Routes>
+            </div>
 
-
-    </Router>
-  );
+        </>
+    )
 }
 
 export default App;
