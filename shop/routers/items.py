@@ -139,6 +139,8 @@ def get_item(
     - HTTPException 404: If the Item with the given slug does not exist.
     """
     item = utils.get_item_by_slug(db, item_slug)
+    # item.reviews for querying the reviews
+    item.reviews
     return item
 
 

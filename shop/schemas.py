@@ -272,6 +272,36 @@ class ItemPatch(ItemCreate):
     category_id: Optional[int] = None
 
 
+class ItemReviewCreate(BaseModel):
+    """
+    Pydantic model for creating a new ItemReview.
+    """
+
+    stars: int
+    comment: str
+
+    @field_validator("stars")
+    def validate_stars(cls, value):
+        if value not in range(1, 6):
+            raise ValueError("Invalid stars")
+        return value
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "forbid"
+
+
+class ItemReviewOut(ItemReviewCreate):
+    """
+    Pydantic model for sending ItemReview data in API responses.
+    """
+
+    id: int
+    item_id: int
+    user_id: int
+
+
 class ItemOut(ItemCreate):
     """
     Pydantic model for sending Item data in API responses.
@@ -286,6 +316,7 @@ class ItemOut(ItemCreate):
     average_rating: float
     is_available: bool
     created_at: datetime
+    reviews: Optional[list[ItemReviewOut]] = None
 
 
 class CartBase(BaseModel):
@@ -451,39 +482,3 @@ class NewsLetterOut(NewsLetterBase):
     id: int
     is_active: bool
     created_at: datetime
-
-
-class ItemReviewCreate(BaseModel):
-    """
-    Pydantic model for creating a new ItemReview.
-    """
-
-    stars: int
-    comment: str
-
-    @field_validator("stars")
-    def validate_stars(cls, value):
-        if value not in range(1, 6):
-            raise ValueError("Invalid stars")
-        return value
-
-    class Config:
-        from_attributes = True
-        validate_assignment = True
-        extra = "forbid"
-
-
-class ItemReviewOut(BaseModel):
-    """
-    Pydantic model for sending ItemReview data in API responses.
-    """
-
-    id: int
-    item_id: int
-    user_id: int
-    stars: int
-    comment: str
-
-    class Config:
-        from_attributes = True
-        validate_assignment = True
