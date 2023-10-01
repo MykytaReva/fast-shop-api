@@ -450,3 +450,41 @@ class NewsLetterOut(NewsLetterBase):
     id: int
     is_active: bool
     created_at: datetime
+
+
+class ItemReviewCreate(BaseModel):
+    """
+    Pydantic model for creating a new ItemReview.
+    """
+
+    stars: int = None
+    comment: str = None
+
+    @field_validator("stars")
+    def validate_stars(cls, value):
+        if value not in range(1, 6):
+            print(value)
+            print(type(value))
+            raise ValueError("Invalid stars")
+        return value
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "forbid"
+
+
+class ItemReviewOut(BaseModel):
+    """
+    Pydantic model for sending ItemReview data in API responses.
+    """
+
+    id: int
+    item_id: int
+    user_id: int
+    stars: Optional[int] = None
+    comment: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True

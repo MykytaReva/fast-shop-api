@@ -45,6 +45,7 @@ class User(Base):
     shop_orders = relationship("ShopOrder", back_populates="user")
 
     items = relationship("Item", secondary=association_table, back_populates="users")
+    item_reviews = relationship("ItemReview", back_populates="user")
 
     # Property to access the hashed password
     @property
@@ -158,6 +159,7 @@ class Item(Base):
     order_items = relationship("OrderItem", back_populates="item", cascade="all, delete-orphan")
 
     users = relationship("User", secondary=association_table, back_populates="items")
+    reviews = relationship("ItemReview", back_populates="item", cascade="all, delete-orphan")
 
 
 class CartItem(Base):
@@ -249,3 +251,17 @@ class NewsLetter(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ItemReview(Base):
+    __tablename__ = "item_review"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("item.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    stars = Column(Integer)
+    comment = Column(Text)
+
+    item = relationship("Item", back_populates="reviews")
+    user = relationship("User", back_populates="item_reviews")

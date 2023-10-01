@@ -1,8 +1,10 @@
+from typing import Union
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from shop import models, schemas, utils
-from shop.utils import get_current_shop, get_db
+from shop.utils import get_current_shop, get_current_user, get_db
 
 router = APIRouter(prefix="/item", tags=["items"])
 
@@ -138,3 +140,43 @@ def get_item(
     """
     item = utils.get_item_by_slug(db, item_slug)
     return item
+
+
+@router.post("/{item_slug}/reviews/", response_model=schemas.ItemReviewOut)
+def create_item_comment(
+    review_data: schemas.ItemReviewCreate,
+    item_slug: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    item = utils.get_item_by_slug(db, item_slug)
+    utils.check_if_user_bought_item(db, current_user.id, item.id)
+    if not review_data.stars and not review_data.comment:
+        raise HTTPException(status_code=422, detail="You must provide at least one field to create a comment.")
+    new_comment = models.ItemReview(
+        item_id=item.id,
+        user_id=current_user.id,
+    )
+    if review_data.stars:
+        new_comment.stars = review_data.stars
+
+    if review_data.comment:
+        new_comment.comment = review_data.comment
+
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+
+    return new_comment
+
+
+@router.get("/{item_slug}/reviews/", response_model=Union[dict, list[schemas.ItemReviewOut]])
+def get_item_reviews(
+    item_slug: str,
+    db: Session = Depends(get_db),
+):
+    item = utils.get_item_by_slug(db, item_slug)
+    reviews = item.reviews
+    if not reviews:
+        return {"detail": "No reviews found."}
+    return reviews

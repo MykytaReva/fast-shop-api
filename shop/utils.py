@@ -410,3 +410,19 @@ def check_if_email_already_signed_for_newsletter(db: Session, email: str):
         raise HTTPException(status_code=409, detail="Email is already signed for newsletter.")
 
     return existing_email
+
+
+def check_if_user_bought_item(db: Session, user_id: int, item_id: int):
+    existing_order = (
+        db.query(OrderItem)
+        .join(OrderItem.order)
+        .filter(
+            OrderItem.item_id == item_id,
+            Order.user_id == user_id,
+            Order.billing_status == True,
+        )
+        .first()
+    )
+    if not existing_order:
+        raise HTTPException(status_code=409, detail="You can leave a review only if you bought this item.")
+    return existing_order
