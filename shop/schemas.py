@@ -182,6 +182,14 @@ class ShopPatch(BaseModel):
         extra = "forbid"
 
 
+class ShopPatchAdmin(ShopPatch):
+    """
+    Inherits from ShopOut and allow site admin to make approve/reject shop.
+    """
+
+    is_approved: Optional[bool] = None
+
+
 class ShopOut(ShopPatch):
     """
     Pydantic model for sending shop data in API responses.
@@ -272,6 +280,14 @@ class ItemPatch(ItemCreate):
     category_id: Optional[int] = None
 
 
+class ItemPatchAdmin(ItemPatch):
+    """
+    Inherits from ItemOut and allow site admin to make approve/reject item.
+    """
+
+    is_approved: Optional[bool] = None
+
+
 class ItemReviewCreate(BaseModel):
     """
     Pydantic model for creating a new ItemReview.
@@ -315,6 +331,7 @@ class ItemOut(ItemCreate):
     slug: str
     average_rating: float
     is_available: bool
+    is_approved: bool
     created_at: datetime
     reviews: Optional[list[ItemReviewOut]] = None
 
@@ -483,3 +500,60 @@ class NewsLetterOut(NewsLetterBase):
     id: int
     is_active: bool
     created_at: datetime
+
+
+class PatchCartItemAdmin(CartBase):
+    """
+    Pydantic model for partially updating an existing CartItem.
+    Inherits from CartItemBase and makes all fields optional.
+    """
+
+    quantity: Optional[int] = None
+    price: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "forbid"
+
+
+class OrderPatchAdmin(BaseModel):
+    """
+    Pydantic model for partially updating an existing Order.
+    """
+
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    pin_code: Optional[str] = None
+    billing_status: Optional[bool] = None
+    total_paid: Optional[float] = None
+    order_key: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        extra = "forbid"
+
+
+class OrderOutAdmin(OrderPatchAdmin):
+    """
+    Pydantic model for sending Order data in API responses.
+    Inherits from OrderPatchAdmin and is used for reading data from the API.
+    """
+
+    pass
+
+
+class ShopOrderPatchAdmin(ShopOrderPatch):
+    """
+    Pydantic model for partially updating an existing ShopOrder.
+    Inherits from ShopOrderBase and makes all fields optional.
+    """
+
+    status: Optional[ShopOrderStatusEnum] = None
+    total_paid: Optional[float] = None
+    billing_status: Optional[bool] = None

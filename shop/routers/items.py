@@ -84,8 +84,8 @@ def update_item(
             if value != current_value:
                 if key == "name":
                     utils.check_free_item_name(db, current_shop.id, value)
+                    setattr(item, "slug", utils.generate_unique_item_slug(db, current_shop.shop_name, value))
                 setattr(item, key, value)
-                setattr(item, "slug", utils.generate_unique_item_slug(db, current_shop.shop_name, value))
                 changed += 1
     if not changed:
         raise HTTPException(status_code=422, detail="Model was not changed.")

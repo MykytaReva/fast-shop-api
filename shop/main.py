@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from shop import constants, models, schemas
 from shop.database import engine
-from shop.routers import categories, items, orders, shops, signup, users
+from shop.routers import categories, items, orders, shops, signup, superuser, users
 from shop.utils import get_db
 
 if constants.ENVIRONMENT == "prod":
@@ -18,7 +18,7 @@ app.include_router(categories.router)
 app.include_router(items.router)
 app.include_router(shops.router)
 app.include_router(orders.router)
-
+app.include_router(superuser.router)
 
 # Create all tables in the database (if they don't exist)
 models.Base.metadata.create_all(bind=engine)

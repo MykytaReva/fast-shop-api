@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from shop import constants
 from shop.auth import oauth2_scheme
 from shop.database import SessionLocal, TestingSessionLocal
-from shop.models import CartItem, Category, Item, NewsLetter, Order, OrderItem, Shop, ShopOrder, User
+from shop.models import CartItem, Category, Item, ItemReview, NewsLetter, Order, OrderItem, Shop, ShopOrder, User
 from shop.schemas import TokenData
 
 
@@ -69,6 +69,13 @@ def get_current_shop(current_user: User = Depends(get_current_user), db: Session
             raise HTTPException(status_code=403, detail="Your shop is not approved.")
     else:
         raise HTTPException(status_code=403, detail="Forbidden.")
+
+
+def get_super_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.is_superuser:
+        return current_user
+    else:
+        raise HTTPException(status_code=403, detail="Only Site Administrator can access this page.")
 
 
 def check_user_email_or_username(db: Session, email: str, username: str):
@@ -165,8 +172,15 @@ def check_free_category_name(db: Session, shop_id: int, category_name: str):
     return existing_category
 
 
-def get_category_by_slug(db: Session, shop_id: int, category_slug: str):
+def get_category_by_slug_and_shop_id(db: Session, shop_id: int, category_slug: str):
     existing_category = db.query(Category).filter(Category.shop_id == shop_id, Category.slug == category_slug).first()
+    if not existing_category:
+        raise HTTPException(status_code=404, detail="Category not found.")
+    return existing_category
+
+
+def get_category_by_slug(db: Session, category_slug: str):
+    existing_category = db.query(Category).filter(Category.slug == category_slug).first()
     if not existing_category:
         raise HTTPException(status_code=404, detail="Category not found.")
     return existing_category
@@ -255,11 +269,10 @@ def get_orders(db: Session, user_id: int):
     return existing_orders
 
 
-def get_order_by_order_id(db: Session, order_id: int, user_id: int):
+def get_order_by_order_id(db: Session, order_id: int):
     existing_order = (
         db.query(Order)
         .filter(
-            Order.user_id == user_id,
             Order.id == order_id,
         )
         .first()
@@ -414,6 +427,13 @@ def check_if_email_already_signed_for_newsletter(db: Session, email: str):
     return existing_email
 
 
+def get_newsletter_by_id(db: Session, newsletter_id: int):
+    existing_email = db.query(NewsLetter).filter(NewsLetter.id == newsletter_id).first()
+    if not existing_email:
+        raise HTTPException(status_code=404, detail="Email not found.")
+    return existing_email
+
+
 def check_if_user_bought_item(db: Session, user_id: int, item_id: int):
     existing_order = (
         db.query(OrderItem)
@@ -428,3 +448,24 @@ def check_if_user_bought_item(db: Session, user_id: int, item_id: int):
     if not existing_order:
         raise HTTPException(status_code=409, detail="You can leave a review only if you bought this item.")
     return existing_order
+
+
+def get_cart_item_by_id(db: Session, cart_item_id: int):
+    existing_cart_item = db.query(CartItem).filter(CartItem.id == cart_item_id).first()
+    if not existing_cart_item:
+        raise HTTPException(status_code=404, detail="Cart item not found.")
+    return existing_cart_item
+
+
+def get_shop_order_by_id(db: Session, shop_order_id: int):
+    existing_shop_order = db.query(ShopOrder).filter(ShopOrder.id == shop_order_id).first()
+    if not existing_shop_order:
+        raise HTTPException(status_code=404, detail="Shop order not found.")
+    return existing_shop_order
+
+
+def get_item_review_by_id(db: Session, item_review_id: int):
+    existing_item_review = db.query(ItemReview).filter(ItemReview.id == item_review_id).first()
+    if not existing_item_review:
+        raise HTTPException(status_code=404, detail="Item review not found.")
+    return existing_item_review

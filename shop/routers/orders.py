@@ -198,7 +198,7 @@ def get_orders(current_user: models.User = Depends(get_current_user), db: Sessio
 
 @router.get("/orders/{order_id}", response_model=schemas.OrderOut)
 def get_order(order_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    order = utils.get_order_by_order_id(db, order_id, current_user.id)
+    order = utils.get_order_by_order_id(db, order_id)
     return order
 
 

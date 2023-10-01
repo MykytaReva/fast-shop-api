@@ -60,7 +60,7 @@ def delete_category(
     Raises:
     - HTTPException 404: If the Category with the given slug does not exist.
     """
-    category = utils.get_category_by_slug(db, current_shop.id, category_slug)
+    category = utils.get_category_by_slug_and_shop_id(db, current_shop.id, category_slug)
     db.delete(category)
     db.commit()
     return category
@@ -89,7 +89,7 @@ def update_category(
     """
     category_data_dict = category_data.model_dump()
 
-    category = utils.get_category_by_slug(db, current_shop.id, category_slug)
+    category = utils.get_category_by_slug_and_shop_id(db, current_shop.id, category_slug)
 
     changed = 0
     for key, value in category_data_dict.items():
@@ -98,8 +98,8 @@ def update_category(
             if value != current_value:
                 if key == "name":
                     utils.check_free_category_name(db, current_shop.id, value)
+                    setattr(category, "slug", utils.generate_unique_category_slug(db, current_shop.shop_name, value))
                 setattr(category, key, value)
-                setattr(category, "slug", utils.generate_unique_category_slug(db, current_shop.shop_name, value))
                 changed += 1
     if not changed:
         raise HTTPException(status_code=422, detail="Model was not changed.")
