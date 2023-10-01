@@ -2,10 +2,11 @@ from collections import defaultdict
 from typing import Union
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from shop import constants, models, schemas, utils
+from shop.smtp_emails import send_new_order_confirmation_email
 from shop.utils import get_current_user, get_db
 
 router = APIRouter(tags=["Related to orders"])
@@ -98,7 +99,10 @@ def get_order_details(current_user: models.User = Depends(get_current_user), db:
 
 @router.post("/create-order/", response_model=schemas.OrderOut)
 def post_order_details(
-    order_data: schemas.OrderBase, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)
+    order_data: schemas.OrderBase,
+    background_tasks: BackgroundTasks,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     cart_items = utils.get_cart_items(db, current_user.id)
     total_paid = sum(cart_item.price for cart_item in cart_items)
@@ -132,6 +136,7 @@ def post_order_details(
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
+    background_tasks.add_task(send_new_order_confirmation_email, current_user.email, new_order)
 
     for cart_item in cart_items:
         order_item = models.OrderItem(

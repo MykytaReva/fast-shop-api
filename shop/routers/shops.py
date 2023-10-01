@@ -1,9 +1,10 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from shop import models, schemas, utils
+from shop.smtp_emails import send_status_updated_email
 from shop.utils import get_current_shop, get_db
 
 router = APIRouter(prefix="/shop", tags=["shop"])
@@ -77,6 +78,7 @@ def get_shop_order(
 def update_shop_order_status(
     order_id: int,
     order_data: schemas.ShopOrderPatch,
+    background_tasks: BackgroundTasks,
     current_shop: models.Shop = Depends(get_current_shop),
     db: Session = Depends(get_db),
 ):
@@ -104,6 +106,7 @@ def update_shop_order_status(
         if value is not None:
             if value != current_value:
                 setattr(order, key, value)
+                background_tasks.add_task(send_status_updated_email, order.user.email, order.status, order.order_id)
                 changed = 1
     if not changed:
         raise HTTPException(status_code=422, detail="Model was not changed.")

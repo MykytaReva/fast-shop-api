@@ -1,22 +1,18 @@
-import os
 from datetime import datetime, timedelta
 
-from dotenv import load_dotenv
 from jose import jwt
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 from shop import constants
 from shop.database import SessionLocal
-from shop.models import User
-
-load_dotenv()
+from shop.models import Order, User
 
 
 def send_activation_email(user_id: int, db: SessionLocal):
     try:
         # Get your SendGrid API key from environment variables
-        sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+        sendgrid_api_key = constants.SENDGRID_API_KEY
 
         if not sendgrid_api_key:
             raise Exception("SendGrid API key is missing")
@@ -47,10 +43,10 @@ def send_activation_email(user_id: int, db: SessionLocal):
         print("An error occurred:", str(e))
 
 
-def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
+def send_reset_password_email(user_id: int, email: str):
     try:
         # Get your SendGrid API key from environment variables
-        sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+        sendgrid_api_key = constants.SENDGRID_API_KEY
 
         if not sendgrid_api_key:
             raise Exception("SendGrid API key is missing")
@@ -68,9 +64,7 @@ def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
             " to reset your password."
         )
         # Create a Mail object
-        message = Mail(
-            from_email=os.environ.get("FROM_EMAIL"), to_emails=email, subject=subject, html_content=html_content
-        )
+        message = Mail(from_email=constants.FROM_EMAIL, to_emails=email, subject=subject, html_content=html_content)
 
         # Send the email
         print('Email sent in "development" environment.')
@@ -83,7 +77,7 @@ def send_reset_password_email(user_id: int, email: str, db: SessionLocal):
 def send_newsletter_activation_email(email: str):
     try:
         # Get your SendGrid API key from environment variables
-        sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+        sendgrid_api_key = constants.SENDGRID_API_KEY
 
         if not sendgrid_api_key:
             raise Exception("SendGrid API key is missing")
@@ -101,9 +95,63 @@ def send_newsletter_activation_email(email: str):
         )
 
         # Create a Mail object
-        message = Mail(
-            from_email=os.environ.get("FROM_EMAIL"), to_emails=email, subject=subject, html_content=html_content
+        message = Mail(from_email=constants.FROM_EMAIL, to_emails=email, subject=subject, html_content=html_content)
+
+        # Send the email
+        print('Email sent in "development" environment.')
+        sg.send(message)
+
+    except Exception as e:
+        print("An error occurred:", str(e))
+
+
+def send_status_updated_email(email: str, order_status: str, order_id: int):
+    try:
+        # Get your SendGrid API key from environment variables
+        sendgrid_api_key = constants.SENDGRID_API_KEY
+
+        if not sendgrid_api_key:
+            raise Exception("SendGrid API key is missing")
+
+        # Create a SendGrid client
+        sg = SendGridAPIClient(sendgrid_api_key)
+
+        subject = "Your order status has been updated, not it is " + order_status
+        html_content = (
+            "Your order status has been updated."
+            f"<p>Please click <a href=http://{constants.HOST}/orders/{order_id}/>here</a> to view your status.</p>"
         )
+
+        # Create a Mail object
+        message = Mail(from_email=constants.FROM_EMAIL, to_emails=email, subject=subject, html_content=html_content)
+
+        # Send the email
+        print('Email sent in "development" environment.')
+        sg.send(message)
+
+    except Exception as e:
+        print("An error occurred:", str(e))
+
+
+def send_new_order_confirmation_email(email: str, order: Order):
+    try:
+        # Get your SendGrid API key from environment variables
+        sendgrid_api_key = constants.SENDGRID_API_KEY
+
+        if not sendgrid_api_key:
+            raise Exception("SendGrid API key is missing")
+
+        # Create a SendGrid client
+        sg = SendGridAPIClient(sendgrid_api_key)
+
+        subject = "Your order has been placed"
+        html_content = (
+            f"Your order has been placed.Total cost: <b>{order.total_paid}$</b>"
+            f"<p>Please click <a href=http://{constants.HOST}/orders/{order.id}/>here</a> to view order details.</p>"
+        )
+
+        # Create a Mail object
+        message = Mail(from_email=constants.FROM_EMAIL, to_emails=email, subject=subject, html_content=html_content)
 
         # Send the email
         print('Email sent in "development" environment.')

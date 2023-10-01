@@ -456,6 +456,7 @@ class ShopOrderOut(ShopOrderBase):
     Inherits from ShopOrderBase and is used for reading data from the API.
     """
 
+    id: int
     status: ShopOrderStatusEnum
     total_paid: int
     billing_status: bool

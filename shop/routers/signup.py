@@ -101,7 +101,7 @@ async def request_password_reset(email: str, background_tasks: BackgroundTasks, 
     """
     user = utils.get_user_by_email(db, email=email)
     if user:
-        background_tasks.add_task(send_reset_password_email, user_id=user.id, email=email, db=db)
+        background_tasks.add_task(send_reset_password_email, user_id=user.id, email=email)
         return {"message": f"Link to reset password has been sent to {email}"}
 
 
