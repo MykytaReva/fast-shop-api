@@ -361,6 +361,8 @@ def get_stats_for_each_item(db: Session, shop_id: int):
             item_price_quantity_dict[order_item.item_id]["quantity"] += order_item.quantity
 
         item_price_quantity_dict[order_item.item_id]["wish_list_count"] = len(item.users)
+        item_price_quantity_dict[order_item.item_id]["reviews_count"] = len(item.reviews)
+        item_price_quantity_dict[order_item.item_id]["average_rate"] = item.average_rate
 
     if not item_price_quantity_dict:
         raise HTTPException(status_code=409, detail="No items have been sold in your shop.")

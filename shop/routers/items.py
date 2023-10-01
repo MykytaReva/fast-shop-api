@@ -167,6 +167,9 @@ def create_item_comment(
     db.commit()
     db.refresh(new_comment)
 
+    item._set_average_rating()
+    db.commit()
+    db.refresh(item)
     return new_comment
 
 

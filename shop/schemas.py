@@ -280,11 +280,12 @@ class ItemOut(ItemCreate):
 
     id: int
     name: str
+    title: str
+    description: str
     slug: str
-    is_approved: bool
+    average_rating: float
     is_available: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
 
 
 class CartBase(BaseModel):
@@ -457,14 +458,12 @@ class ItemReviewCreate(BaseModel):
     Pydantic model for creating a new ItemReview.
     """
 
-    stars: int = None
-    comment: str = None
+    stars: int
+    comment: str
 
     @field_validator("stars")
     def validate_stars(cls, value):
         if value not in range(1, 6):
-            print(value)
-            print(type(value))
             raise ValueError("Invalid stars")
         return value
 
@@ -482,8 +481,8 @@ class ItemReviewOut(BaseModel):
     id: int
     item_id: int
     user_id: int
-    stars: Optional[int] = None
-    comment: Optional[str] = None
+    stars: int
+    comment: str
 
     class Config:
         from_attributes = True

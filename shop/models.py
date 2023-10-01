@@ -144,6 +144,7 @@ class Item(Base):
     title = Column(String(200))
     description = Column(Text)
     price = Column(Float(precision=2))
+    average_rating = Column(Float(precision=2), default=0.0)
 
     slug = Column(String, unique=True)
     is_approved = Column(Boolean, default=True)
@@ -160,6 +161,15 @@ class Item(Base):
 
     users = relationship("User", secondary=association_table, back_populates="items")
     reviews = relationship("ItemReview", back_populates="item", cascade="all, delete-orphan")
+
+    def _set_average_rating(self):
+        if self.reviews:
+            total = 0
+            for review in self.reviews:
+                total += review.stars
+            self.average_rating = round(total / len(self.reviews), 1)
+        else:
+            self.average_rating = 0.0
 
 
 class CartItem(Base):
