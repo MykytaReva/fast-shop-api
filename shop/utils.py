@@ -132,8 +132,6 @@ def get_shop_by_slug(db: Session, shop_slug: str):
 
 
 def check_free_shop_name(db: Session, shop_name: str):
-    if shop_name == "string":
-        raise HTTPException(status_code=409, detail="Shop name was not provided.")
     existing_shop = db.query(Shop).filter(Shop.shop_name == shop_name).first()
     if existing_shop:
         raise HTTPException(status_code=409, detail="Shop name is already taken.")
@@ -164,8 +162,6 @@ def generate_unique_shop_slug(db: Session, shop_name: str):
 
 
 def check_free_category_name(db: Session, shop_id: int, category_name: str):
-    if category_name == "string":
-        raise HTTPException(status_code=409, detail="Category name was not provided.")
     existing_category = db.query(Category).filter(Category.shop_id == shop_id, Category.name == category_name).first()
     if existing_category:
         raise HTTPException(status_code=409, detail=f"You already have category with the name '{category_name}'.")
@@ -198,8 +194,6 @@ def generate_unique_item_slug(db: Session, shop_name: str, item_name: str):
 
 
 def check_free_item_name(db: Session, shop_id: int, item_name: str):
-    if item_name == "string":
-        raise HTTPException(status_code=409, detail="Item name was not provided.")
     existing_item = db.query(Item).filter(Item.shop_id == shop_id, Item.name == item_name).first()
     if existing_item:
         raise HTTPException(status_code=409, detail=f"You already have item with the name '{item_name}'.")

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-online-api-dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shop-online-api-dev
+  template:
+    metadata:
+      name: shop-online-api-dev-tmpl
+      labels:
+        app: shop-online-api-dev
+    spec:
+      containers:
+        - name: shop-api-online
+          image: mykytareva/shop-online-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POSTGRES_DB
+              value: shop-online-api
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-creds
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-creds
+                  key: POSTGRES_PASSWORD
