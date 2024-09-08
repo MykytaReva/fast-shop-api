@@ -5,7 +5,7 @@
 
 #### Pet-project
 
-My first pet-project on FastApi. The idea was to rewrite my [Django project](https://github.com/MykytaReva/shopOnline). I may suppose that I will learn React as well to make a basic UI.
+My first pet-project on FastApi. The idea was to rewrite my [Django project](https://github.com/MykytaReva/shopOnline).
 
 #### Project Architecture
 
